@@ -78,6 +78,17 @@ class AccessUserSerializer(serializers.Serializer):
     teams = AccessTeamGrantSerializer(many=True, help_text="Teams giving the user access to the entity")
 
 
+class RequestEntitiesAccessSerializer(serializers.Serializer):
+    """Body of a request for access to several entities."""
+
+    entity_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False,
+        max_length=2048,  # at most 2047 private entities exist: one bit each in the 2048-bit access vector
+        help_text="Entities to request access for",
+    )
+
+
 class RequestAccessSerializer(serializers.Serializer):
     """Serializer for access request validation."""
 

@@ -3,6 +3,7 @@
 from typing import List, Optional
 
 from celery import chain
+from celery.canvas import Signature
 from diff_match_patch import diff_match_patch
 from django.db import transaction
 from django.utils import timezone
@@ -31,6 +32,7 @@ class TaskScheduler:
 
         pipeline = tasks if tasks is not None else NOTES_TASK_SCHEDULER_DEFAULT_PIPELINE
         self.processing: List[BaseTask] = [task(user) for task in pipeline]
+        self.tasks_to_run: List[Signature] = []
 
     def run_pipeline(
         self,
@@ -38,6 +40,7 @@ class TaskScheduler:
         validate: bool = True,
         update_acvec: bool = True,
         allow_invalid: bool = False,
+        queue_tasks: bool = True,
     ):
         """Perform checks for creating a note and build referenced entries list.
 
@@ -49,6 +52,9 @@ class TaskScheduler:
         processed until it is valid again), and its access vector only ever narrows, so an
         invalid edit can't expose the note to anyone who couldn't read it before or after.
         Access checks on the links that did resolve still apply.
+
+        With ``queue_tasks=False``, the processing tasks are left in ``tasks_to_run`` for the caller to run
+        instead of being queued on commit.
 
         Returns:
             A list of all referenced entries. Their id fields are populated to
@@ -95,7 +101,8 @@ class TaskScheduler:
                 if async_task:
                     tasks.append(async_task)
 
-            if tasks and not invalid:
+            self.tasks_to_run = tasks if not invalid else []
+            if tasks and not invalid and queue_tasks:
                 task_chain = chain(*tasks).on_error(note_processing_failed_task.si(note.id))
                 transaction.on_commit(lambda c=task_chain: c.apply_async())
 

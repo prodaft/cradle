@@ -2,6 +2,8 @@
 
 from django.urls import include, path
 
+from access.views.request_access_view import RequestEntitiesAccess
+
 from .views import entity_views, entry_class_views, entry_views, relation_views, stream_views
 
 urlpatterns = [
@@ -33,6 +35,7 @@ urlpatterns = [
         name="entity_list_stream",
     ),
     path("entities/", entity_views.EntityList.as_view(), name="entity_list"),
+    path("entities/access/requests/", RequestEntitiesAccess.as_view(), name="request_entities_access"),
     path(
         "entities/<int:entity_id>/",
         entity_views.EntityDetail.as_view(),

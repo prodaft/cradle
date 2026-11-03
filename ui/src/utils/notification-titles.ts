@@ -1,6 +1,7 @@
 import {
     BellSimpleIcon,
     CheckCircleIcon,
+    DatabaseIcon,
     FileTextIcon,
     ShareNetworkIcon,
     ShieldCheckIcon,
@@ -39,6 +40,12 @@ const NOTIFICATIONS: Record<
     },
     enrichment_error_notification: {
         title: 'Enrichment failed',
+        icon: WarningCircleIcon,
+        destructive: true,
+    },
+    digest_complete_notification: { title: 'Digest complete', icon: DatabaseIcon },
+    digest_error_notification: {
+        title: 'Digest failed',
         icon: WarningCircleIcon,
         destructive: true,
     },

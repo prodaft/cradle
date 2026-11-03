@@ -23,6 +23,7 @@ app.conf.result_expires = 259200  # 3 days in seconds
 
 app.conf.task_routes = {
     "mail.tasks.send_email_task": {"queue": "email"},
+    "notifications.tasks.notify_user_task": {"queue": "email"},
     "notes.tasks.smart_linker_task": {"queue": "notes"},
     "notes.tasks.entry_class_creation_task": {"queue": "notes"},
     "notes.tasks.entry_population_task": {"queue": "notes"},
@@ -33,6 +34,7 @@ app.conf.task_routes = {
     "notes.tasks.note_processing_failed_task": {"queue": "notes"},
     "notes.tasks.relink_note_task": {"queue": "notes"},
     "notes.tasks.relink_all_notes_task": {"queue": "notes"},
+    "notes.tasks.relink_all_notes_finished_task": {"queue": "notes"},
     "entries.tasks.remap_notes_task": {"queue": "notes"},
     "entries.tasks.refresh_edges_materialized_view": {"queue": "graph"},
     "publish.tasks.generate_report": {"queue": "publish"},
@@ -40,9 +42,12 @@ app.conf.task_routes = {
     "intelio.tasks.core.propagate_acvec_digest": {"queue": "access"},
     "intelio.tasks.core.propagate_acvec_enrich": {"queue": "access"},
     "entries.tasks.update_accesses": {"queue": "access"},
+    "entries.tasks.propagate_all_access_vectors_task": {"queue": "access"},
+    "entries.tasks.access_vectors_propagated_task": {"queue": "access"},
     "entries.tasks.scan_for_children": {"queue": "enrich"},
     "intelio.tasks.core.run_enricher": {"queue": "enrich"},
     "intelio.tasks.core.start_enrich": {"queue": "enrich"},
+    "intelio.tasks.core.fail_stuck_enrichments": {"queue": "enrich"},
     "intelio.tasks.core.start_digest": {"queue": "digest"},
     "intelio.tasks.cradle.download_file_for_note": {"queue": "digest"},
     "intelio.tasks.falcon.digest_chunk": {"queue": "digest"},
@@ -50,6 +55,7 @@ app.conf.task_routes = {
     "file_transfer.uploads.tasks.cleanup_expired_upload_generic": {"queue": "cleanup"},
     "file_transfer.tasks.process_file_task": {"queue": "files"},
     "file_transfer.tasks.reprocess_all_files_task": {"queue": "files"},
+    "file_transfer.tasks.files_reprocessed_task": {"queue": "files"},
     "file_transfer.uploads.tasks.cleanup_all_expired_uploads": {"queue": "cleanup"},
     "user.tasks.delete_expired_blacklisted_tokens": {"queue": "cleanup"},
 }
@@ -77,6 +83,10 @@ app.conf.beat_schedule = {
     "delete-expired-blacklisted-tokens-every-night": {
         "task": "user.tasks.delete_expired_blacklisted_tokens",
         "schedule": crontab(hour=4, minute=0),
+    },
+    "fail-stuck-enrichments-every-10-minutes": {
+        "task": "intelio.tasks.core.fail_stuck_enrichments",
+        "schedule": crontab(minute="*/10"),
     },
     "cleanup-expired-uploads-every-10-minutes": {
         "task": "file_transfer.uploads.tasks.cleanup_all_expired_uploads",

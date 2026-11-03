@@ -167,6 +167,21 @@ class BaseDigest(EntitiesAccessVectorMixin, LifecycleModel):
         if self.status in [DigestStatus.DONE, DigestStatus.ERROR, DigestStatus.WARNING]:
             self.cleanup_local_file()
 
+    @hook(AFTER_UPDATE, when="status", has_changed=True, on_commit=True)
+    def status_updated_notify(self):
+        """Tell the uploader once the digest ends, however it ended (finalize, mark_error or a failed chunk)."""
+        from notifications.models import DigestCompleteNotification, DigestErrorNotification
+
+        if self.status == DigestStatus.ERROR:
+            DigestErrorNotification.objects.create(
+                user=self.user, digest=self, message=f'Your digest "{self.title}" failed.'
+            )
+        elif self.status in (DigestStatus.DONE, DigestStatus.WARNING):
+            outcome = "finished with warnings" if self.status == DigestStatus.WARNING else "is complete"
+            DigestCompleteNotification.objects.create(
+                user=self.user, digest=self, message=f'Your digest "{self.title}" {outcome}.'
+            )
+
     @property
     def path(self):
         """Local cache path for digest file."""
@@ -540,6 +555,9 @@ class EnrichmentRequest(EntitiesAccessVectorMixin, LifecycleModel):
         notify_instance: EnrichmentRequest | None = None
         with transaction.atomic():
             instance = EnrichmentRequest.objects.select_for_update().get(pk=self.pk)
+            if instance.completed_at is not None:
+                # Already ended (e.g. failed as stuck): a late report must not change or re-notify it.
+                return
             instance.enricher_status = dict(instance.enricher_status or {})
             instance.enricher_status[enricher_type] = status.value
 

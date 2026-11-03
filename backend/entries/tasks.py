@@ -1,7 +1,8 @@
 """Celery tasks for entries: access updates, note remapping, graph refresh."""
 
-from celery import group, shared_task
+from celery import chord, group, shared_task
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection, transaction
 from django.db.models import Q
 
@@ -19,8 +20,12 @@ from .models import Entry, Relation, calculate_acvec
 
 @shared_task
 @distributed_lock("update_accesses_{entry_id}", timeout=3600)
-def update_accesses(entry_id):
-    """Propagate access vector changes from an entry to its notes, alias relations, digests, and enrichments."""
+def update_accesses(entry_id, propagate_inline=False):
+    """Propagate access vector changes from an entry to its notes, alias relations, digests, and enrichments.
+
+    The notes, digests and enrichments are queued as separate tasks; with ``propagate_inline`` they run in this
+    task instead, so it finishing means they are done (propagate_all_access_vectors_task waits on it).
+    """
     entry = Entry.objects.get(id=entry_id)
 
     notes = entry.notes.all()
@@ -50,18 +55,43 @@ def update_accesses(entry_id):
         Relation.objects.bulk_update(alias_relations, ["access_vector"])
         transaction.on_commit(lambda: refresh_edges_materialized_view.apply_async())
 
-    digest_ids = entry.digests.all().values_list("id", flat=True)
-    enrich_ids = entry.enrichment_requests.all().values_list("id", flat=True)
-
-    g_notes = group(*[propagate_acvec.si(n.id) for n in update_notes])
-    g_digests = group(*[propagate_acvec_digest.si(d) for d in digest_ids])
-    g_enrichs = group(*[propagate_acvec_enrich.si(e) for e in enrich_ids])
-
-    transaction.on_commit(lambda: g_notes.apply_async())
-    transaction.on_commit(lambda: g_digests.apply_async())
-    transaction.on_commit(lambda: g_enrichs.apply_async())
+    propagations = [
+        *(propagate_acvec.si(note.id) for note in update_notes),
+        *(propagate_acvec_digest.si(d) for d in entry.digests.all().values_list("id", flat=True)),
+        *(propagate_acvec_enrich.si(e) for e in entry.enrichment_requests.all().values_list("id", flat=True)),
+    ]
+    if propagate_inline:
+        for propagation in propagations:
+            try:
+                propagation()
+            except ObjectDoesNotExist:
+                pass  # deleted since this task listed it; nothing left to propagate to
+    else:
+        transaction.on_commit(lambda: group(propagations).apply_async())
 
     return f"Updated {len(update_notes)} notes"
+
+
+@shared_task
+def propagate_all_access_vectors_task(user_id):
+    """Run update_accesses for every entity in parallel, then refresh the graph and notify ``user_id``."""
+    from notifications.tasks import notify_user_task
+
+    entity_ids = list(Entry.entities.values_list("id", flat=True))
+    finished = access_vectors_propagated_task.si(user_id, len(entity_ids)).on_error(
+        notify_user_task.si(user_id, "Propagate Access Vectors failed. Check the worker logs for details.")
+    )
+    chord([update_accesses.si(entity_id, propagate_inline=True) for entity_id in entity_ids])(finished)
+
+
+@shared_task
+def access_vectors_propagated_task(user_id, entity_count):
+    """Chord callback of propagate_all_access_vectors_task: refresh the graph so it shows the result, then notify."""
+    from notifications.tasks import notify_user_task
+
+    refresh_edges_materialized_view()
+    entities = "entity" if entity_count == 1 else "entities"
+    notify_user_task(user_id, f"Propagate Access Vectors finished for {entity_count} {entities}.")
 
 
 @shared_task

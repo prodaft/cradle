@@ -2,10 +2,14 @@
 
 import logging
 import uuid
+from collections.abc import Callable, Iterable
 
 from django.db import models, transaction
+from django.db.models import QuerySet
 from django_lifecycle import AFTER_CREATE, LifecycleModel, hook
 
+from access.enums import AccessType
+from access.models import Access
 from entries.models import Entry
 from mail.models import (
     AccessGrantedMail,
@@ -34,6 +38,8 @@ _SOCKET_TYPES = {
     "ReportProcessingErrorNotification": "report_processing_error_notification",
     "EnrichmentCompleteNotification": "enrichment_complete_notification",
     "EnrichmentErrorNotification": "enrichment_error_notification",
+    "DigestCompleteNotification": "digest_complete_notification",
+    "DigestErrorNotification": "digest_error_notification",
 }
 
 
@@ -115,23 +121,39 @@ class AccessRequestNotification(MessageNotification):
         Entry, on_delete=models.CASCADE, help_text="Entity access was requested for."
     )
 
-    @property
-    def get_mail(self):
-        """Return AccessRequestMail for the access request."""
-        return AccessRequestMail(self.user, self.requesting_user, self.entity)
+    @classmethod
+    def request_access(
+        cls,
+        requesting_user: CradleUser,
+        entities: QuerySet[Entry],
+        access_types: set[AccessType],
+        message: Callable[[Entry], str],
+    ) -> None:
+        """Ask for ``access_types`` to whichever of ``entities`` the user lacks it for (see ``notify_granters``)."""
+        missing = Access.objects.inaccessible_entries(requesting_user, entities, access_types)
+        cls.notify_granters(requesting_user, missing.select_related("entry_class", "team"), message)
 
     @classmethod
-    def notify_granters(cls, requesting_user: CradleUser, entity: Entry, message: str) -> None:
-        """Notify everyone who decides access to ``entity`` that ``requesting_user`` asked for it.
+    def notify_granters(
+        cls, requesting_user: CradleUser, entities: Iterable[Entry], message: Callable[[Entry], str]
+    ) -> None:
+        """Notify everyone who decides access to ``entities`` that ``requesting_user`` asked for it.
 
-        One notification per recipient (see ``teams.rules.access_request_recipients``); each is saved on its own so
-        its broadcast and email hooks run.
+        Each recipient (see ``teams.rules.access_request_recipients``) gets one notification per entity, saved on its
+        own so its broadcast hook runs, and one email listing them all. An entity whose request the recipient has not
+        read yet is skipped, so asking again does not notify twice.
         """
+        requested: dict[CradleUser, list[Entry]] = {}
         with transaction.atomic():
-            for recipient_id in access_request_recipients(entity).values_list("id", flat=True):
-                cls.objects.create(
-                    user_id=recipient_id, requesting_user=requesting_user, entity=entity, message=message
-                )
+            for entity in entities:
+                unread = cls.objects.filter(requesting_user=requesting_user, entity=entity, is_unread=True)
+                for recipient in access_request_recipients(entity).exclude(id__in=unread.values("user_id")):
+                    cls.objects.create(
+                        user=recipient, requesting_user=requesting_user, entity=entity, message=message(entity)
+                    )
+                    requested.setdefault(recipient, []).append(entity)
+            for recipient, recipient_entities in requested.items():
+                transaction.on_commit(AccessRequestMail(recipient, requesting_user, recipient_entities).dispatch_safely)
 
 
 class TeamMembershipNotification(MessageNotification):
@@ -231,3 +253,25 @@ class EnrichmentErrorNotification(MessageNotification):
     def get_mail(self):
         """Return EnrichmentErrorMail for the failed enrichment."""
         return EnrichmentErrorMail(self.user, self.enrichment_request, self.error_message)
+
+
+class DigestCompleteNotification(MessageNotification):
+    """Notification when a digest import finishes, possibly with warnings."""
+
+    digest: models.ForeignKey = models.ForeignKey(
+        "intelio.BaseDigest",
+        on_delete=models.CASCADE,
+        related_name="complete_notifications",
+        help_text="Digest that finished.",
+    )
+
+
+class DigestErrorNotification(MessageNotification):
+    """Notification when a digest import fails."""
+
+    digest: models.ForeignKey = models.ForeignKey(
+        "intelio.BaseDigest",
+        on_delete=models.CASCADE,
+        related_name="error_notifications",
+        help_text="Digest that failed.",
+    )

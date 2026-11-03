@@ -30,6 +30,8 @@ from ..models import MessageNotification
 from ..serializers import (
     AccessGrantedNotificationSerializer,
     AccessRequestNotificationSerializer,
+    DigestCompleteNotificationSerializer,
+    DigestErrorNotificationSerializer,
     EnrichmentCompleteNotificationSerializer,
     EnrichmentErrorNotificationSerializer,
     MessageNotificationSerializer,
@@ -104,6 +106,8 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
                             ReportProcessingErrorNotificationSerializer,
                             EnrichmentCompleteNotificationSerializer,
                             EnrichmentErrorNotificationSerializer,
+                            DigestCompleteNotificationSerializer,
+                            DigestErrorNotificationSerializer,
                         ],
                         resource_type_field_name="type",
                         many=True,

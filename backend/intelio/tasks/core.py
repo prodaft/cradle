@@ -4,11 +4,14 @@ import logging
 import uuid
 
 from celery import group, shared_task
+from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from entries.constants import INTERNAL_ENTRY_CLASS_DEFAULTS, SUBTYPE_DIGEST, SUBTYPE_ENRICHMENT
 from entries.models import EntryClass
 
+from ..constants import INTELIO_ENRICHMENT_MESSAGE_FINISH_FAILED, INTELIO_ENRICHMENT_RESTART_AFTER
 from ..enums import EnrichmentStatus
 from ..models.base import BaseDigest, BaseEnricher, EnricherSettings, EnrichmentRequest
 
@@ -95,6 +98,7 @@ def start_enrich(enrich_id):
         request.status = EnrichmentStatus.ERROR
         request.completed_at = timezone.now()
         request.save(update_fields=["status", "completed_at"])
+        request._send_enrichment_notification(request)
         return
 
     group(*tasks).apply_async()
@@ -118,3 +122,23 @@ def propagate_acvec_enrich(enrich_id):
     request = EnrichmentRequest.objects.get(id=enrich_id)
     request.update_access_vector()
     refresh_edges_materialized_view.apply_async()
+
+
+@shared_task
+def fail_stuck_enrichments():
+    """Fail the unfinished enrichers of requests that ran too long to still be working, e.g. after a worker crash.
+
+    Failing the last one completes the request, which notifies its owner like any other failure.
+    """
+    cutoff = timezone.now() - INTELIO_ENRICHMENT_RESTART_AFTER
+    terminal = {EnrichmentStatus.DONE.value, EnrichmentStatus.ERROR.value}
+    stuck = Q(completed_at__isnull=True, started_at__lt=cutoff)
+    for request_id in EnrichmentRequest.objects.filter(stuck).values_list("id", flat=True):
+        with transaction.atomic():
+            # Re-check under the lock: the request may have finished or been restarted since the query.
+            request = EnrichmentRequest.objects.select_for_update().filter(stuck, id=request_id).first()
+            if request is None:
+                continue
+            for enricher_type in set(request.enrichers_settings.values_list("enricher_type", flat=True)):
+                if (request.enricher_status or {}).get(enricher_type) not in terminal:
+                    request.fail_enricher(enricher_type, INTELIO_ENRICHMENT_MESSAGE_FINISH_FAILED)

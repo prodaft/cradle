@@ -123,16 +123,16 @@ class ConfirmationMail(TemplatedMail):
 
 
 class AccessRequestMail(TemplatedMail):
-    """Notifies an entity owner that someone requested access to an entry."""
+    """Notifies someone who can grant access that a user requested access to one or more entities."""
 
-    def __init__(self, user, requester, entry) -> None:
+    def __init__(self, user, requester, entries) -> None:
         self.recipient = user
         self.requester = requester
-        self.entry = entry
+        self.entries = entries
         params = {
             "recipient": self.recipient,
             "requester": self.requester,
-            "entry": self.entry,
+            "entries": self.entries,
             "frontend_url": settings.FRONTEND_URL,
         }
         super().__init__(
@@ -180,6 +180,22 @@ class NewUserNotificationMail(TemplatedMail):
         super().__init__(
             subject="CRADLE - New User Awaiting Activation",
             template_name="mail/new_user_notification.html",
+            params=params,
+        )
+
+    def dispatch(self) -> None:
+        self._dispatch_celery(self.user.email)
+
+
+class AccountActivatedMail(TemplatedMail):
+    """Tells a user that an administrator activated their account, so they can now sign in."""
+
+    def __init__(self, user) -> None:
+        self.user = user
+        params = {"user": user, "frontend_url": settings.FRONTEND_URL}
+        super().__init__(
+            subject="CRADLE - Your Account Is Active",
+            template_name="mail/account_activated.html",
             params=params,
         )
 

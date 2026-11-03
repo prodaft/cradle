@@ -23,6 +23,7 @@ from core.pagination import TotalPagesPagination
 from core.query_lang import search_q
 from core.throttling import AuthRateThrottle
 from core.utils import validate_order_by
+from mail.models import AccountActivatedMail
 from management.serializers import ManagementActionResponseSerializer
 from management.settings import system_settings
 from notifications.models import MessageNotification, NewUserNotification
@@ -321,8 +322,12 @@ class UserDetail(APIView):
         else:
             serializer = UserCreateSerializer(edited, data=data, partial=True)
 
+        was_active = edited.is_active
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        if user.is_active and not was_active and user.email_confirmed:
+            # The user can now sign in, but could not see an in-app notification before, so tell them by email.
+            transaction.on_commit(AccountActivatedMail(user).dispatch_safely)
         json_user = UserRetrieveSerializer(user).data
         return Response(json_user, status=status.HTTP_200_OK)
 

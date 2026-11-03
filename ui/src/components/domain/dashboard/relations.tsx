@@ -49,7 +49,7 @@ import {
     getExpandedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 type RelationEntry = components['schemas']['EntryWithDepth'];
@@ -302,19 +302,11 @@ export default function Relations({ obj }: RelationsProps) {
 
     const requestAccess = useMutation({
         mutationFn: async (entities: string[]) => {
-            await Promise.all(
-                entities.map(async (entity) => {
-                    const entityId = Number(entity);
-                    const { error, response } = await fetchClient.POST(
-                        '/entries/entities/{entity_id}/access/requests/',
-                        {
-                            params: { path: { entity_id: entityId } },
-                            body: { entity_id: entityId },
-                        },
-                    );
-                    if (error) throw { response, error };
-                }),
+            const { error, response } = await fetchClient.POST(
+                '/entries/entities/access/requests/',
+                { body: { entity_ids: entities.map(Number) } },
             );
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Access request submitted successfully',
@@ -429,6 +421,10 @@ export default function Relations({ obj }: RelationsProps) {
         meta: { suppressNotification: true },
         select: (response) => response?.inaccessible_ids ?? [],
     });
+
+    // A request was sent for this entry and depth; another one may have different inaccessible entities.
+    const { reset: resetRequestAccess } = requestAccess;
+    useEffect(() => resetRequestAccess(), [obj.id, depth, resetRequestAccess]);
 
     const hasInaccessible = inaccessibleIds.length > 0;
 
@@ -666,8 +662,11 @@ export default function Relations({ obj }: RelationsProps) {
                         onClick={() =>
                             requestAccess.mutate(inaccessibleIds.map(String))
                         }
+                        disabled={requestAccess.isPending || requestAccess.isSuccess}
                     >
-                        Request Access
+                        {requestAccess.isSuccess
+                            ? 'Access Requested'
+                            : 'Request Access'}
                     </Button>
                 </AlertComponent>
             )}

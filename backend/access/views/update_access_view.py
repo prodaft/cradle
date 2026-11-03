@@ -15,7 +15,7 @@ from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from entries.exceptions import EntriesErrorCodes
 from entries.lookup import get_entity
-from notifications.models import AccessGrantedNotification
+from notifications.models import AccessGrantedNotification, MessageNotification
 from teams.rules import can_set_user_access
 from user.authentication import CookieJWTAuthentication
 from user.exceptions import UserErrorCodes, UserNotFoundException
@@ -77,14 +77,22 @@ class UpdateAccess(APIView):
 
         access_type = serializer.validated_data["access_type"]
         with transaction.atomic():
+            before = Access.objects.effective_access_type(updated_user, updated_entity)
             Access.objects.update_or_create(
                 user=updated_user, entity=updated_entity, defaults={"access_type": access_type}
             )
-            access_label = str(AccessType(access_type).label)
-            AccessGrantedNotification.objects.create(
-                user=updated_user,
-                entity=updated_entity,
-                message=f'Your access to "{updated_entity.name}" was changed to {access_label}.',
-            )
+            after = Access.objects.effective_access_type(updated_user, updated_entity)
+
+            if after != before:
+                if after == AccessType.NONE:
+                    MessageNotification.objects.create(
+                        user=updated_user, message=f'Your access to "{updated_entity.name}" was removed.'
+                    )
+                else:
+                    AccessGrantedNotification.objects.create(
+                        user=updated_user,
+                        entity=updated_entity,
+                        message=f'Your access to "{updated_entity.name}" was changed to {after.label}.',
+                    )
 
         return Response({"access_type": access_type}, status=status.HTTP_200_OK)

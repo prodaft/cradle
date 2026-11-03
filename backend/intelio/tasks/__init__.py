@@ -1,5 +1,6 @@
 """IntelIO Celery tasks: digests and enrichment."""
 
+from .core import fail_stuck_enrichments as fail_stuck_enrichments  # noqa:F401
 from .core import propagate_acvec_digest as propagate_acvec_digest  # noqa:F401
 from .core import propagate_acvec_enrich as propagate_acvec_enrich  # noqa:F401
 from .core import start_digest as start_digest  # noqa:F401

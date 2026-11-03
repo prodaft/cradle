@@ -1,0 +1,17 @@
+{% extends "mail/base_email.html" %}
+
+{% block content %}
+    <h2>Your Account Is Active</h2>
+    <p>Hello <strong>{{ user.username }}</strong>,</p>
+    <p>An administrator has activated your CRADLE account. You can now sign in:</p>
+    <p style="text-align:center;">
+      <a class="button" href="{{ frontend_url }}" target="_blank">Sign In</a>
+    </p>
+    <p>If the button above doesn’t work, copy and paste the link below into your web browser:</p>
+    <p><a href="{{ frontend_url }}">{{ frontend_url }}</a></p>
+
+    <p class="note">
+      If you did not create a CRADLE account or believe this message was sent in error,
+      you can safely ignore it or contact our support team.
+    </p>
+{% endblock %}

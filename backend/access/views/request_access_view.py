@@ -2,6 +2,7 @@
 
 from typing import cast
 
+from django.db.models import QuerySet
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -17,8 +18,7 @@ from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 
 from ..enums import AccessType
-from ..models import Access
-from ..serializers import RequestAccessSerializer
+from ..serializers import RequestAccessSerializer, RequestEntitiesAccessSerializer
 
 
 @extend_schema_view(
@@ -70,11 +70,52 @@ class RequestAccess(APIView):
         except Entry.DoesNotExist:
             raise EntityNotFoundException(detail="That entity could not be found.")
 
-        if Access.objects.has_access_to_entities(user, {entity}, {AccessType.READ_WRITE}):
-            return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)
+        _request_read_write(user, Entry.entities.filter(id=entity.id))
+        return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)
 
-        AccessRequestNotification.notify_granters(
-            user, entity, f"User {user.username} has requested access for entity {entity.name}"
-        )
 
+def _request_read_write(user: CradleUser, entities: QuerySet[Entry]) -> None:
+    """Ask for read-write access to ``entities``, as the single and bulk entity requests do."""
+    AccessRequestNotification.request_access(
+        user,
+        entities,
+        {AccessType.READ_WRITE},
+        lambda entity: f"User {user.username} has requested access for entity {entity.name}",
+    )
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="entities_access_requests_bulk_create",
+        summary="Request access to several entities",
+        description=(
+            "Requests access to several entities at once, notifying the same users as a single request. Each of them "
+            "gets one email listing the entities; entities the user already has read-write access to, or whose "
+            "request the recipient has not read yet, are skipped."
+        ),
+        request=RequestEntitiesAccessSerializer,
+        responses={
+            201: {"description": "Access request sent successfully"},
+            **get_error_responses(EntriesErrorCodes.ENTITY_NOT_FOUND, include_validation_error=True),
+            **get_common_error_responses(),
+        },
+    )
+)
+class RequestEntitiesAccess(APIView):
+    """Request access to several entities in one go."""
+
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = RequestEntitiesAccessSerializer
+
+    def post(self, request: Request) -> Response:
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        entity_ids = set(serializer.validated_data["entity_ids"])
+
+        entities = Entry.entities.filter(id__in=entity_ids)
+        if entities.count() != len(entity_ids):
+            raise EntityNotFoundException(detail="Some of those entities could not be found.")
+
+        _request_read_write(cast(CradleUser, request.user), entities)
         return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)

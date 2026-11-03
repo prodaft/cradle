@@ -9,6 +9,8 @@ from user.serializers import EssentialUserRetrieveSerializer
 from .models import (
     AccessGrantedNotification,
     AccessRequestNotification,
+    DigestCompleteNotification,
+    DigestErrorNotification,
     EnrichmentCompleteNotification,
     EnrichmentErrorNotification,
     MessageNotification,
@@ -148,6 +150,28 @@ class EnrichmentErrorNotificationSerializer(MessageNotificationSerializer):
         fields = ["id", "type", "message", "is_unread", "enrichment_request_id", "error_message", "created_at"]
 
 
+class DigestCompleteNotificationSerializer(MessageNotificationSerializer):
+    """Serializer for digest complete notifications."""
+
+    type_value = "digest_complete_notification"
+    digest_id = serializers.UUIDField(read_only=True, help_text="ID of the digest that finished.")
+
+    class Meta:
+        model = DigestCompleteNotification
+        fields = ["id", "type", "message", "is_unread", "digest_id", "created_at"]
+
+
+class DigestErrorNotificationSerializer(MessageNotificationSerializer):
+    """Serializer for digest error notifications."""
+
+    type_value = "digest_error_notification"
+    digest_id = serializers.UUIDField(read_only=True, help_text="ID of the digest that failed.")
+
+    class Meta:
+        model = DigestErrorNotification
+        fields = ["id", "type", "message", "is_unread", "digest_id", "created_at"]
+
+
 NOTIFICATION_SERIALIZER_MAP: dict[type, type[serializers.ModelSerializer]] = {
     MessageNotification: MessageNotificationSerializer,
     AccessGrantedNotification: AccessGrantedNotificationSerializer,
@@ -159,6 +183,8 @@ NOTIFICATION_SERIALIZER_MAP: dict[type, type[serializers.ModelSerializer]] = {
     ReportProcessingErrorNotification: ReportProcessingErrorNotificationSerializer,
     EnrichmentCompleteNotification: EnrichmentCompleteNotificationSerializer,
     EnrichmentErrorNotification: EnrichmentErrorNotificationSerializer,
+    DigestCompleteNotification: DigestCompleteNotificationSerializer,
+    DigestErrorNotification: DigestErrorNotificationSerializer,
 }
 
 

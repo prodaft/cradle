@@ -3,6 +3,8 @@
 import uuid
 from unittest.mock import MagicMock, patch
 
+from notifications.models import MessageNotification
+
 from ..enums import NoteStatus
 from ..models import Note
 from ..processor.task_scheduler import TaskScheduler
@@ -19,6 +21,18 @@ class NoteProcessingFailureTest(NotesTestCase):
         note.refresh_from_db()
         self.assertEqual(note.status, NoteStatus.INVALID)
         self.assertTrue(note.status_message)
+
+    def test_failure_callback_tells_who_saved_the_note(self):
+        note = Note.objects.create(
+            author=self.user, editor=self.user, title="Plan", content="x", status=NoteStatus.PROCESSING
+        )
+
+        note_processing_failed_task(note.id)
+
+        self.assertEqual(
+            list(MessageNotification.objects.filter(user=self.user).values_list("message", flat=True)),
+            ['The note "Plan" could not be processed. Save it again to retry.'],
+        )
 
     def test_failure_callback_keeps_other_statuses(self):
         note = Note.objects.create(author=self.user, content="x", status=NoteStatus.INVALID, status_message="kept")

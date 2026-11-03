@@ -21,3 +21,12 @@ NoteListStatus = models.TextChoices(
         *((status.name, (status.value, status.label)) for status in NoteStatus),
     ],
 )
+
+
+class RelinkOutcome(models.TextChoices):
+    """What relinking one note did; relink_note_task returns it so relinking all notes can report a summary."""
+
+    RELINKED = "relinked", _("re-linked")
+    INVALID = "invalid", _("invalid")
+    FAILED = "failed", _("failed")
+    SKIPPED = "skipped", _("skipped")

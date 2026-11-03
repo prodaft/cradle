@@ -10,7 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from access.models import Access
+from access.enums import AccessType
 from core.openapi import get_common_error_responses, get_error_responses
 from notifications.models import AccessRequestNotification
 from user.authentication import CookieJWTAuthentication
@@ -54,13 +54,12 @@ class RequestNoteAccess(APIView):
         if note.has_read_access(user):
             return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)
 
-        missing_entities = note.entries.is_entity().exclude(id__in=Access.objects.get_accessible_entity_ids(user.id))
         label = note.title or str(note.id)
-        for entity in missing_entities:
-            AccessRequestNotification.notify_granters(
-                user,
-                entity,
-                f'User {user.username} has requested access for entity {entity.name} to read note "{label}"',
-            )
+        AccessRequestNotification.request_access(
+            user,
+            note.entries.is_entity(),
+            {AccessType.READ, AccessType.READ_WRITE},
+            lambda entity: f'User {user.username} has requested access for entity {entity.name} to read note "{label}"',
+        )
 
         return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)

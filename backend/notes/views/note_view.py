@@ -694,8 +694,8 @@ class NoteRelink(APIView):
         operation_id="notes_relink_all",
         summary="Relink all notes",
         description=(
-            "Queues a re-run of the note processing pipeline for every non-fleeting note, one note at a time in "
-            "the background. Admin only."
+            "Queues a re-run of the note processing pipeline for every non-fleeting note, one task per note in "
+            "the background, and notifies the requesting admin with a summary once every note is done. Admin only."
         ),
         request=None,
         responses={
@@ -714,7 +714,10 @@ class NoteRelinkAll(APIView):
         count = Note.objects.non_fleeting().count()
         user_id = request.user.id
         transaction.on_commit(lambda: relink_all_notes_task.delay(user_id))
-        return Response({"detail": f"Relinking {count} notes in the background."}, status=status.HTTP_202_ACCEPTED)
+        return Response(
+            {"detail": f"Relinking {count} notes in the background. You will be notified when it finishes."},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 @extend_schema_view(

@@ -1,8 +1,9 @@
 """Celery tasks for note processing: linking, population, metadata, access vectors."""
 
 import logging
+from collections import Counter
 
-from celery import shared_task
+from celery import chord, shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import close_old_connections, transaction
 from django.db.models import Count, Q
@@ -22,7 +23,7 @@ from entries.models import Entry, EntryClass, Relation
 from management.settings import system_settings
 from user.models import CradleUser
 
-from .enums import NoteStatus
+from .enums import NoteStatus, RelinkOutcome
 from .exceptions import EntriesNotFoundException, EntryTypesNotFoundException
 from .models import Note
 
@@ -435,7 +436,8 @@ def propagate_acvec(note_id):
 def relink_note_task(note_id, user_id):
     """Rebuild one note's relations: delete them and re-run its pipeline on a locked, freshly loaded copy.
 
-    The lock makes concurrent edits wait, so the pipeline's save cannot overwrite them with stale content.
+    The lock makes concurrent edits wait, so the pipeline's save cannot overwrite them with stale content. The
+    pipeline runs in this task, so the task finishing means the note is relinked; it returns a ``RelinkOutcome``.
     """
     from .constants import NOTES_RELINK_PIPELINE
     from .processor.task_scheduler import TaskScheduler
@@ -443,36 +445,84 @@ def relink_note_task(note_id, user_id):
 
     user = CradleUser.objects.filter(id=user_id).first()
     if user is None:
-        return
-    with transaction.atomic():
-        note = Note.objects.select_for_update().filter(id=note_id, fleeting=False).first()
-        if note is None:
-            return
-        # A note with bad links keeps its last links until it is fixed, as after an invalid
-        # edit; relinking only refreshes its problems (an entry type may exist by now).
-        try:
-            ValidateNoteTask(user).run(note, [])
-        except CradleAPIException as e:
-            if getattr(e, "link_issues", None):
-                note.write_status(NoteStatus.INVALID, str(e.detail), e.link_issues)
-                return
-        note.relations.all().delete()
-        TaskScheduler(user, tasks=NOTES_RELINK_PIPELINE).run_pipeline(note, update_acvec=False)
+        return RelinkOutcome.SKIPPED
+    scheduler = TaskScheduler(user, tasks=NOTES_RELINK_PIPELINE)
+    try:
+        with transaction.atomic():
+            note = Note.objects.select_for_update().filter(id=note_id, fleeting=False).first()
+            if note is None:
+                return RelinkOutcome.SKIPPED
+            # A note with bad links keeps its last links until it is fixed, as after an invalid
+            # edit; relinking only refreshes its problems (an entry type may exist by now).
+            try:
+                ValidateNoteTask(user).run(note, [])
+            except CradleAPIException as e:
+                if getattr(e, "link_issues", None):
+                    note.write_status(NoteStatus.INVALID, str(e.detail), e.link_issues)
+                    return RelinkOutcome.INVALID
+            note.relations.all().delete()
+            scheduler.run_pipeline(note, update_acvec=False, queue_tasks=False)
+        # Process the note here instead of queuing it, so this task finishing means it is relinked. One task at a
+        # time: chain.apply() waits on results, which Celery forbids inside a task.
+        for task in scheduler.tasks_to_run:
+            result = task.apply(throw=True)
+            if result.failed():  # an automatic retry run eagerly fails without raising
+                raise result.result
+    except Exception:
+        # Before commit the relations are kept; a processing task failing afterwards leaves the note invalid.
+        logger.exception("Relinking note %s failed", note_id)
+        note_processing_failed_task(note_id, notify=False)
+        return RelinkOutcome.FAILED
+    return RelinkOutcome.RELINKED
 
 
 @shared_task
 def relink_all_notes_task(user_id):
-    """Queue a relink for every non-fleeting note, one task (and transaction) per note."""
-    for note_id in Note.objects.non_fleeting().values_list("id", flat=True).iterator():
-        relink_note_task.delay(note_id, user_id)
+    """Relink every non-fleeting note, one task (and transaction) per note, then notify ``user_id`` with a summary."""
+    from notifications.tasks import notify_user_task
+
+    note_ids = list(Note.objects.non_fleeting().values_list("id", flat=True))
+    finished = relink_all_notes_finished_task.s(user_id).on_error(
+        notify_user_task.si(user_id, "Re-Link All Notes failed. Check the worker logs for details.")
+    )
+    # An empty header runs the callback straight away, with no outcomes.
+    chord([relink_note_task.si(note_id, user_id) for note_id in note_ids])(finished)
 
 
 @shared_task
-def note_processing_failed_task(note_id):
-    """Error callback for the processing chain: a note must not stay PROCESSING after a task gave up."""
+def relink_all_notes_finished_task(outcomes, user_id):
+    """Chord callback of relink_all_notes_task: refresh the graph so it shows the new links, then notify."""
+    from entries.tasks import refresh_edges_materialized_view
+    from notifications.tasks import notify_user_task
+
+    refresh_edges_materialized_view()
+    counts = Counter(outcomes)
+    summary = ", ".join(
+        f"{counts[outcome]} {outcome.label}"
+        for outcome in RelinkOutcome
+        if counts[outcome] or outcome == RelinkOutcome.RELINKED
+    )
+    notes = "note" if len(outcomes) == 1 else "notes"
+    notify_user_task(user_id, f"Re-Link All Notes finished for {len(outcomes)} {notes}: {summary}.")
+
+
+@shared_task
+def note_processing_failed_task(note_id, notify=True):
+    """Error callback for the processing chain: a note must not stay PROCESSING after a task gave up.
+
+    With ``notify``, whoever saved the note last is told, since they may have left the editor by the time processing
+    fails. Relinking passes False: the admin who started it gets a summary instead.
+    """
+    from notifications.models import MessageNotification
+
     note = Note.objects.filter(id=note_id).first()
     if note is not None and note.status == NoteStatus.PROCESSING:
         note.write_status(NoteStatus.INVALID, "This note could not be processed. Save it again to retry.")
+        if notify:
+            MessageNotification.objects.create(
+                user_id=note.editor_id or note.author_id,
+                message=f'The note "{note.title or "Untitled"}" could not be processed. Save it again to retry.',
+            )
 
 
 @shared_task

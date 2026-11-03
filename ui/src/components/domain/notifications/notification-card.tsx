@@ -24,6 +24,8 @@ type ReportRenderNotification = components['schemas']['ReportRenderNotification'
 type EnrichmentCompleteNotification =
     components['schemas']['EnrichmentCompleteNotification'];
 type EnrichmentErrorNotification = components['schemas']['EnrichmentErrorNotification'];
+type DigestCompleteNotification = components['schemas']['DigestCompleteNotification'];
+type DigestErrorNotification = components['schemas']['DigestErrorNotification'];
 type AccessType = components['schemas']['AccessTypeEnum'];
 
 interface NotificationCardProps {
@@ -185,7 +187,9 @@ export default function NotificationCard({
         notification.type === 'report_render_notification' ||
         notification.type === 'report_processing_error_notification' ||
         notification.type === 'enrichment_complete_notification' ||
-        notification.type === 'enrichment_error_notification'
+        notification.type === 'enrichment_error_notification' ||
+        notification.type === 'digest_complete_notification' ||
+        notification.type === 'digest_error_notification'
     );
 
     return (
@@ -318,6 +322,25 @@ export default function NotificationCard({
                                 }}
                             >
                                 View details
+                            </Button>
+                        )}
+
+                        {(notification.type === 'digest_complete_notification' ||
+                            notification.type === 'digest_error_notification') && (
+                            <Button
+                                size='xs'
+                                onClick={() => {
+                                    const notif = notification as
+                                        | DigestCompleteNotification
+                                        | DigestErrorNotification;
+                                    if (!notif.digest_id) return;
+                                    router.navigate({
+                                        to: '/digest-data/$id',
+                                        params: { id: notif.digest_id },
+                                    });
+                                }}
+                            >
+                                View digest
                             </Button>
                         )}
                     </div>

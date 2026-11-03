@@ -17,13 +17,13 @@ from rest_framework.views import APIView
 
 from core.exceptions import CoreErrorCodes, NotFoundException
 from core.openapi import get_common_error_responses, get_error_responses
-from entries.models import Entry
 from entries.tasks import (
     delete_hanging_artifacts,
+    propagate_all_access_vectors_task,
     refresh_edges_materialized_view,
-    update_accesses,
 )
 from file_transfer.tasks import reprocess_all_files_task
+from notifications.tasks import notify_user_task
 from user.authentication import CookieJWTAuthentication
 from user.permissions import HasAdminRole
 
@@ -199,27 +199,35 @@ class ActionView(APIView):
         return getattr(self, "action_" + action_name.replace("-", "_"))(request, *args, **kwargs)
 
     def action_refresh_materialized_graph(self, request, *args, **kwargs):
-        """Refresh the materialized graph view (edges)."""
-        refresh_edges_materialized_view.apply_async(force=True)
-        return Response({"detail": "Started graph materialization."}, status=status.HTTP_202_ACCEPTED)
+        """Refresh the materialized graph view (edges), notifying the admin when it ends."""
+        user_id = request.user.id
+        refresh_edges_materialized_view.apply_async(
+            force=True,
+            link=notify_user_task.si(user_id, "Refresh Materialized Graph finished."),
+            link_error=notify_user_task.si(
+                user_id, "Refresh Materialized Graph failed. Check the worker logs for details."
+            ),
+        )
+        return Response(
+            {"detail": "Started graph materialization. You will be notified when it finishes."},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     def action_propagate_access_vectors(self, request, *args, **kwargs):
-        """Propagate access vectors for all entities."""
-        entities = Entry.entities.all()
-
-        for entity in entities:
-            update_accesses.apply_async(args=(entity.id,))
-
+        """Propagate access vectors for all entities, notifying the admin when it ends."""
+        propagate_all_access_vectors_task.delay(request.user.id)
         return Response(
-            {"detail": "Propagating the access vectors for all entities."},
+            {"detail": "Propagating the access vectors for all entities. You will be notified when it finishes."},
             status=status.HTTP_202_ACCEPTED,
         )
 
     def action_reprocess_all_files(self, request, *args, **kwargs):
-        """Re-run file processing for all uploaded files."""
-        reprocess_all_files_task.apply_async()
-
-        return Response({"detail": "Started reprocessing all files."}, status=status.HTTP_202_ACCEPTED)
+        """Re-run file processing for all uploaded files, notifying the admin when it ends."""
+        reprocess_all_files_task.delay(request.user.id)
+        return Response(
+            {"detail": "Started reprocessing all files. You will be notified when it finishes."},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     def action_delete_hanging_artifacts(self, request, *args, **kwargs):
         """Delete artifacts nothing points at (no relations, notes or aliasing entity)."""

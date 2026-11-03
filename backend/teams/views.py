@@ -19,6 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from access.enums import AccessType
+from access.models import Access
 from core.exceptions import CoreErrorCodes, PermissionDeniedException
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
@@ -26,7 +27,7 @@ from core.query_lang import search_q
 from entries.exceptions import EntriesErrorCodes
 from entries.lookup import get_entity
 from entries.models import EntryClass
-from notifications.models import TeamMembershipNotification
+from notifications.models import MessageNotification, TeamMembershipNotification
 from user.authentication import CookieJWTAuthentication
 from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
@@ -235,8 +236,12 @@ class TeamDetail(APIView):
                 "Change their teams first."
             )
         with transaction.atomic():
+            member_ids = list(team.memberships.exclude(user=user).values_list("user_id", flat=True))
             team.log_delete(user, details=team.name)
             team.delete()
+            # Plain messages: a team notification would be deleted with the team.
+            for member_id in member_ids:
+                MessageNotification.objects.create(user_id=member_id, message=f'The team "{team.name}" was deleted.')
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -458,6 +463,10 @@ class TeamMemberDetail(APIView):
         with transaction.atomic():
             membership.delete()
             team.log_edit(user, details=f"removed {membership.user.username}")
+            if not leaving:
+                TeamMembershipNotification.objects.create(
+                    user_id=membership.user_id, team=team, message=f'You were removed from team "{team.name}".'
+                )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -598,11 +607,22 @@ class TeamAccessUpdate(APIView):
             )
 
         with transaction.atomic():
+            # Members whose access comes from elsewhere too may not notice a change, so compare per member.
+            members = [m.user for m in team.memberships.exclude(user=user).select_related("user")]
+            before = {member.pk: Access.objects.effective_access_type(member, entity) for member in members}
             if access_type == AccessType.NONE:
                 TeamAccess.objects.filter(team=team, entity=entity).delete()
             else:
                 TeamAccess.objects.update_or_create(team=team, entity=entity, defaults={"access_type": access_type})
             team.log_edit(user, details=f"set access to {entity.name} to {access_type}")
+            for member in members:
+                after = Access.objects.effective_access_type(member, entity)
+                if after == before[member.pk]:
+                    continue
+                change = "You lost access to" if after == AccessType.NONE else f"You now have {after.label.lower()} to"
+                TeamMembershipNotification.objects.create(
+                    user=member, team=team, message=f'{change} "{entity.name}" after team "{team.name}" was updated.'
+                )
 
         return Response({"access_type": access_type})
 

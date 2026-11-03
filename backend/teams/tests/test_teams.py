@@ -307,7 +307,7 @@ class DirectAccessRulesTest(TeamsTestCase):
         self.entity.team = self.team
         self.entity.save()
 
-        AccessRequestNotification.notify_granters(self.outsider, self.entity, "please")
+        AccessRequestNotification.notify_granters(self.outsider, [self.entity], lambda entity: "please")
         recipients = set(AccessRequestNotification.objects.values_list("user_id", flat=True))
         self.assertEqual(recipients, {self.lead.id})
 
