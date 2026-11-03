@@ -51,11 +51,18 @@ import type { LivePeer } from '@/utils/editor/sync/remote-cursors';
 import { parseMarkdownInline } from '@/utils/parser';
 import { Prec } from '@codemirror/state';
 import { keymap, type EditorView } from '@codemirror/view';
-import { BookOpenIcon, InfoIcon, PencilSimpleIcon, XIcon } from '@phosphor-icons/react';
+import {
+    BookOpenIcon,
+    InfoIcon,
+    PaperclipIcon,
+    PencilSimpleIcon,
+    XIcon,
+} from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
+import { formatFileSize } from '@utils/files';
 import { format } from 'date-fns';
 import React, {
     Fragment,
@@ -462,6 +469,11 @@ export default function NoteViewer() {
     const isWritable = permissionSource?.permission === 'read-write';
     const isAuthor = Boolean(userId) && permissionSource?.created_by?.id === userId;
     const hasFiles = files.length > 0;
+    const totalFileSize = useMemo(
+        () => files.reduce((sum, file) => sum + (file.size ?? 0), 0),
+        [files],
+    );
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const enableEditingRef = useRef(enableEditing);
     useEffect(() => {
@@ -814,18 +826,48 @@ export default function NoteViewer() {
                     {section === 'files' && hasFiles && (
                         <span className='font-mono text-muted-foreground'>
                             {files.length}
+                            {totalFileSize > 0 && ` · ${formatFileSize(totalFileSize)}`}
                         </span>
                     )}
-                    <Button
-                        variant='ghost'
-                        size='icon-xs'
-                        className='ml-auto text-muted-foreground'
-                        aria-label={`Hide ${title.toLowerCase()}`}
-                        title={`Hide ${title.toLowerCase()}`}
-                        onClick={() => toggleSidebarSection(section)}
-                    >
-                        <XIcon weight='bold' />
-                    </Button>
+                    <div className='ml-auto flex items-center'>
+                        {section === 'files' && enableEditing && (
+                            <>
+                                <input
+                                    ref={fileInputRef}
+                                    type='file'
+                                    multiple
+                                    hidden
+                                    onChange={(event) => {
+                                        const picked = Array.from(
+                                            event.target.files ?? [],
+                                        );
+                                        event.target.value = '';
+                                        uploadFiles(picked);
+                                    }}
+                                />
+                                <Button
+                                    variant='ghost'
+                                    size='icon-xs'
+                                    className='text-muted-foreground'
+                                    aria-label='Attach files'
+                                    title='Attach files'
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <PaperclipIcon weight='bold' />
+                                </Button>
+                            </>
+                        )}
+                        <Button
+                            variant='ghost'
+                            size='icon-xs'
+                            className='text-muted-foreground'
+                            aria-label={`Hide ${title.toLowerCase()}`}
+                            title={`Hide ${title.toLowerCase()}`}
+                            onClick={() => toggleSidebarSection(section)}
+                        >
+                            <XIcon weight='bold' />
+                        </Button>
+                    </div>
                 </div>
                 <ScrollArea className='min-h-0 flex-1'>
                     {section === 'files' ? (
@@ -838,6 +880,7 @@ export default function NoteViewer() {
                             jumpToPosition={jumpToPosition}
                             canEdit={enableEditing}
                             onUpload={uploadFiles}
+                            onBrowse={() => fileInputRef.current?.click()}
                             uploads={uploads}
                             onRetryUpload={retryUpload}
                             onDismissUpload={dismissUpload}

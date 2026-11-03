@@ -46,7 +46,6 @@ import {
     FingerprintIcon,
     ImageIcon,
     MagnifyingGlassIcon,
-    PaperclipIcon,
     PulseIcon,
     TerminalWindowIcon,
     TextboxIcon,
@@ -68,7 +67,6 @@ import {
 import {
     useCallback,
     useMemo,
-    useRef,
     useState,
     type Dispatch,
     type DragEvent,
@@ -118,6 +116,8 @@ interface FilesOutlineProps {
     canEdit?: boolean;
     /** Uploads files to the note. */
     onUpload?: (files: File[]) => void;
+    /** Opens the file picker. */
+    onBrowse?: () => void;
     /** Uploads still in flight or failed, listed after the attached files. */
     uploads?: PendingUpload[];
     onRetryUpload?: (upload: PendingUpload) => void;
@@ -134,11 +134,11 @@ export default function FilesOutline({
     jumpToPosition,
     canEdit = true,
     onUpload,
+    onBrowse,
     uploads = [],
     onRetryUpload,
     onDismissUpload,
 }: FilesOutlineProps) {
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [query, setQuery] = useState('');
     const [pendingRemove, setPendingRemove] = useState<FileEntry | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -156,11 +156,6 @@ export default function FilesOutline({
     const visibleEntries = useMemo(
         () => entries.filter((entry) => matchesFilter(entry.file, normalizedQuery)),
         [entries, normalizedQuery],
-    );
-
-    const totalSize = useMemo(
-        () => files.reduce((sum, file) => sum + (file.size ?? 0), 0),
-        [files],
     );
 
     const { mutate: openFile } = useFileDownload();
@@ -217,8 +212,25 @@ export default function FilesOutline({
         [onUpload],
     );
 
+    const canUpload = canEdit && Boolean(onUpload);
+
     return (
-        <div className='flex h-full flex-col'>
+        <div
+            className={cn(
+                'flex min-h-full flex-col transition-colors',
+                isDragging && 'bg-primary/10 ring-1 ring-inset ring-primary',
+            )}
+            onDragOver={(event) => {
+                if (!canUpload || !event.dataTransfer.types.includes('Files')) return;
+                event.preventDefault();
+                setIsDragging(true);
+            }}
+            onDragLeave={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node))
+                    setIsDragging(false);
+            }}
+            onDrop={handleDrop}
+        >
             {files.length > 0 && (
                 <div className='p-3 pb-0'>
                     <InputGroup>
@@ -259,7 +271,21 @@ export default function FilesOutline({
                             </EmptyMedia>
                             <EmptyTitle>No files</EmptyTitle>
                             <EmptyDescription>
-                                Files you attach will appear here.
+                                {canUpload ? (
+                                    <>
+                                        Drop files here or{' '}
+                                        <button
+                                            type='button'
+                                            onClick={onBrowse}
+                                            className='cursor-pointer text-foreground underline underline-offset-2 hover:text-primary'
+                                        >
+                                            browse
+                                        </button>
+                                        .
+                                    </>
+                                ) : (
+                                    'Files you attach will appear here.'
+                                )}
                             </EmptyDescription>
                         </EmptyHeader>
                     </Empty>
@@ -293,49 +319,6 @@ export default function FilesOutline({
                     />
                 ))}
             </div>
-
-            {canEdit && onUpload && (
-                <>
-                    <input
-                        ref={fileInputRef}
-                        type='file'
-                        multiple
-                        hidden
-                        onChange={(event) => {
-                            const picked = Array.from(event.target.files ?? []);
-                            event.target.value = '';
-                            if (picked.length > 0) onUpload(picked);
-                        }}
-                    />
-                    <button
-                        type='button'
-                        onClick={() => fileInputRef.current?.click()}
-                        onDragOver={(event) => {
-                            event.preventDefault();
-                            setIsDragging(true);
-                        }}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDrop={handleDrop}
-                        className={cn(
-                            'm-3 mt-0 flex shrink-0 cursor-pointer flex-col items-center gap-1 text-center border border-dashed border-border p-3 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground',
-                            isDragging &&
-                                'border-primary bg-primary/10 text-foreground',
-                        )}
-                    >
-                        <PaperclipIcon
-                            className='size-4'
-                            weight='bold'
-                            aria-hidden='true'
-                        />
-                        <span>Drop files or click to attach</span>
-                        {totalSize > 0 && (
-                            <span className='font-mono text-[11px]'>
-                                {formatFileSize(totalSize)} total
-                            </span>
-                        )}
-                    </button>
-                </>
-            )}
 
             <AlertDialog
                 open={Boolean(pendingRemove)}
