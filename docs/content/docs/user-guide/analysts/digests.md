@@ -12,7 +12,9 @@ and analyzed.
 ## What digests do
 Digests are treated similarly to enrichments in the graph. A digest appears
 as its own node, and the entries created from the digest connect back to
-that node so you can trace where the data came from.
+that node so you can trace where the data came from. Links between artifacts
+from a digest, such as an indicator and the domains it points to, are only
+visible to users who can access the entity the digest item belongs to.
 
 ## Common example
 Importing a JSON report from another CRADLE instance. When you create the

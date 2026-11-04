@@ -67,6 +67,31 @@ class FalconDigest(BaseDigest):
         else:
             self.finalize()
 
+    def _save_relations(self, rels: list[Relation]) -> None:
+        """Store ``rels`` except unscoped ones and links this digest already has with the same time and tags.
+
+        The same link can repeat within an item, across items with the same tags, or when a chunk runs again.
+        """
+
+        def key(r: Relation) -> tuple:
+            return (*sorted((r.e1.id, r.e2.id)), r.created_at, json.dumps(r.details, sort_keys=True))
+
+        rels = [r for r in rels if Relation.is_scoped(r.e1, r.e2, r.access_vector)]
+        if not rels:
+            return
+        ids = {r.e1.id for r in rels} | {r.e2.id for r in rels}
+        stored = self.relations.filter(reason=RelationReason.DIGEST, e1_id__in=ids, e2_id__in=ids)
+        seen = {
+            (e1, e2, created_at, json.dumps(details, sort_keys=True))
+            for e1, e2, created_at, details in stored.values_list("e1_id", "e2_id", "created_at", "details")
+        }
+        new = []
+        for r in rels:
+            if key(r) not in seen:
+                seen.add(key(r))
+                new.append(r)
+        Relation.objects.bulk_create(new)
+
     def digest_chunk(self, start, end):
         """Process a slice of Falcon objects, creating entries and relations."""
         rels = []
@@ -247,21 +272,14 @@ class FalconDigest(BaseDigest):
                 )
 
                 if len(rels) >= INTELIO_FALCON_DIGEST_REL_CHUNK_SIZE:
-                    to_save = [r for r in rels if Relation.includes_entity(r.e1, r.e2)]
-                    if to_save:
-                        Relation.objects.bulk_create(to_save)
+                    self._save_relations(rels)
                     rels = []
 
             if len(rels) >= INTELIO_FALCON_DIGEST_REL_CHUNK_SIZE:
-                to_save = [r for r in rels if Relation.includes_entity(r.e1, r.e2)]
-                if to_save:
-                    Relation.objects.bulk_create(to_save)
+                self._save_relations(rels)
                 rels = []
 
-        if len(rels) > 0:
-            to_save = [r for r in rels if Relation.includes_entity(r.e1, r.e2)]
-            if to_save:
-                Relation.objects.bulk_create(to_save)
+        self._save_relations(rels)
 
         rels = [
             Relation(
@@ -275,8 +293,6 @@ class FalconDigest(BaseDigest):
             for entity in entities.values()
         ]
 
-        to_save = [r for r in rels if Relation.includes_entity(r.e1, r.e2)]
-        if to_save:
-            Relation.objects.bulk_create(to_save)
+        self._save_relations(rels)
         if entities:
             self.entities.add(*entities.values())

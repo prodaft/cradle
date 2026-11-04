@@ -511,8 +511,19 @@ class Relation(LifecycleModel):
 
     @staticmethod
     def includes_entity(e1: "Entry", e2: "Entry") -> bool:
-        """True if at least one endpoint is an entity (enforced on save and Relation.objects.bulk_create)."""
+        """True if at least one endpoint is an entity."""
         return e1.entry_class.type == EntryType.ENTITY or e2.entry_class.type == EntryType.ENTITY
+
+    @staticmethod
+    def is_scoped(e1: "Entry", e2: "Entry", access_vector: int | str) -> bool:
+        """Whether a relation may be stored: it involves an entity, or its access comes from one.
+
+        Artifacts are public, so a relation between two of them is safe only when its access vector carries an
+        entity's bit (e.g. the digest's or enrichment's entities); with bit 0 alone everyone could see it. Enforced on
+        save and Relation.objects.bulk_create.
+        """
+        vector = Relation._meta.get_field("access_vector").to_python(access_vector)
+        return Relation.includes_entity(e1, e2) or bool(vector & ~1)
 
     @staticmethod
     def alias_acvec(e1: "Entry", e2: "Entry") -> int:
@@ -522,12 +533,14 @@ class Relation(LifecycleModel):
     def save(self, *args, **kwargs):
         if self.e1.id > self.e2.id:
             self.e1, self.e2 = self.e2, self.e1
-        if not Relation.includes_entity(self.e1, self.e2):
-            raise ValidationError("Each relation must involve at least one entity endpoint.")
+        if not Relation.is_scoped(self.e1, self.e2, self.access_vector):
+            raise ValidationError("Each relation must involve an entity or carry an entity's access.")
         super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["-created_at"]
+        # A note's, digest's or enrichment's relations are looked up by their source.
+        indexes = [models.Index(fields=["content_type", "object_id"], name="entries_relation_source_idx")]
 
     def __str__(self):
         return f"Relation [{self.reason}]({self.e1}-{self.e2}) "

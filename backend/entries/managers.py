@@ -171,12 +171,12 @@ class RelationManager(models.Manager):
         return self.get_queryset().accessible(user)
 
     def bulk_create(self, objs, **kwargs):
-        """Bulk create relations: normalize e1/e2 order (e1.id <= e2.id), require an entity endpoint."""
+        """Bulk create relations: normalize e1/e2 order (e1.id <= e2.id), require them to be scoped (see is_scoped)."""
         for obj in objs:
             if obj.e1.id > obj.e2.id:
                 obj.e1, obj.e2 = obj.e2, obj.e1
-            if not self.model.includes_entity(obj.e1, obj.e2):
-                raise ValidationError("Each relation must involve at least one entity endpoint.")
+            if not self.model.is_scoped(obj.e1, obj.e2, obj.access_vector):
+                raise ValidationError("Each relation must involve an entity or carry an entity's access.")
         return super().bulk_create(objs, **kwargs)
 
 

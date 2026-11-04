@@ -184,11 +184,11 @@ def _apply_result(
 
     if relations_to_create:
         before = len(relations_to_create)
-        relations_to_create = [r for r in relations_to_create if Relation.includes_entity(r.e1, r.e2)]
+        relations_to_create = [r for r in relations_to_create if Relation.is_scoped(r.e1, r.e2, r.access_vector)]
         skipped = before - len(relations_to_create)
         if skipped:
             logger.warning(
-                "Container enricher %s skipped %d artifact-artifact relations",
+                "Container enricher %s skipped %d artifact-artifact relations without entity access",
                 enricher_type,
                 skipped,
             )
