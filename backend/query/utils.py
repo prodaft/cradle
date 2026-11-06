@@ -1,11 +1,23 @@
+"""Advanced query string parsing for subtype:name format with wildcards.
+
+Parses query strings like "subtype:name" where both parts support:
+- Unquoted: * as wildcard (istartswith, iendswith, icontains, or iregex)
+- Quoted (double-quotes): literal match, backslash escapes
+"""
+
+import re
+
 from django.db.models import Q
 
 
-def parse_field(s, start):
-    """
-    Parse one field from s starting at index 'start'.
-    If the field is quoted (starts with a double quote), it reads until the matching unescaped quote.
-    Returns a tuple (field_value, next_index, was_quoted).
+def parse_field(s: str, start: int) -> tuple[str, int, bool]:
+    r"""Parse one field from s starting at index start.
+
+    If the field is quoted (starts with \"), reads until the matching unescaped quote.
+    Backslash escapes the next character inside quotes.
+
+    Returns:
+        Tuple of (field_value, next_index, was_quoted).
     """
     n = len(s)
     if start < n and s[start] == '"':
@@ -36,22 +48,12 @@ def parse_field(s, start):
         return s[start:i].strip(), i, False
 
 
-def process_pattern(field, was_quoted):
-    """
-    Given a field value and whether it was quoted, return a tuple of (lookup, processed_value)
-    for the Django query.
+def process_pattern(field: str, was_quoted: bool) -> tuple[str | None, str | None]:
+    """Map field value to Django ORM lookup and processed value.
 
-    For quoted fields, wildcards are taken literally (using an exact lookup).
-
-    For unquoted fields:
-      - If no '*' is present, return an exact match.
-      - If '*' appears only at the extremes in a simple pattern, use:
-          - "istartswith" if the field ends with '*'
-          - "iendswith" if it starts with '*'
-          - "icontains" if it both starts and ends with '*' (and no other '*' exists)
-      - If '*' appears in the middle or there are multiple wildcards beyond these simple cases,
-        convert the field into a regex pattern (escaping regex-special characters, except '*')
-        and return an "iregex" lookup.
+    Quoted fields: exact match (wildcards literal).
+    Unquoted: * at extremes -> istartswith/iendswith/icontains; else -> iregex.
+    Lone '*' returns (None, None).
     """
     if was_quoted:
         return "exact", field
@@ -75,31 +77,20 @@ def process_pattern(field, was_quoted):
         return "icontains", field[1:-1]
 
     # Otherwise, handle wildcards in the middle or multiple wildcards.
-    def escape_except_asterisk(s):
-        escaped = ""
-        for char in s:
-            if char in ".^$+?{}[]|()\\":
-                escaped += "\\" + char
-            else:
-                escaped += char
-        return escaped
-
-    escaped_field = escape_except_asterisk(field)
-    regex_pattern = "^" + escaped_field.replace("*", ".*") + "$"
+    escaped = re.escape(field).replace(r"\*", ".*")
+    regex_pattern = "^" + escaped + "$"
     return "iregex", regex_pattern
 
 
-def parse_query(query_str):
-    """
-    Parses a query string which is expected to be in the form:
-      <subtype>:<name>
-    However, if no colon is found outside of any quotes, the input is treated as:
-    1. A literal for the name field (processed as *:<literal>)
-    2. AND also searches for entries where:
-       - entry_class__type = 'entity'
-       - description contains the query (case-insensitive)
+def parse_query(query_str: str) -> Q:
+    """Parse query string into a Django Q object for Entry filtering.
 
-    Returns a Django Q object that combines all the search conditions.
+    Format: subtype:name (both support wildcards when unquoted).
+    If no colon outside quotes: treats whole string as name and also searches
+    entity descriptions (case-insensitive).
+
+    Raises:
+        ValueError: Invalid format (e.g. missing colon after first field).
     """
     # First, scan for a colon that is not inside quotes.
     colon_index = None
@@ -115,31 +106,17 @@ def parse_query(query_str):
         i += 1
 
     if colon_index is None:
-        # No colon found: treat the entire string as the name field
-        # and also search in description for entities
-        field1 = "*"
-        quoted1 = False
+        # No colon: treat entire string as name; also search description for entities
         field2, _, quoted2 = parse_field(query_str, 0)
-
-        # Process the fields for wildcards
-        lookup1, pattern1 = process_pattern(field1, quoted1)
         lookup2, pattern2 = process_pattern(field2, quoted2)
-
-        # Create base query for name field
         name_q = Q(**{f"name__{lookup2}": pattern2}) if lookup2 else ~Q(pk__in=[])
-
-        # Add entity type and description search
-        entity_description_q = Q(description__icontains=query_str.strip("*")) & Q(
-            entry_class__type="entity"
-        )
-
-        # Combine both conditions with OR
+        entity_description_q = Q(description__icontains=query_str.strip("*")) & Q(entry_class__type="entity")
         q = name_q | entity_description_q
     else:
         # Colon found: parse normally
         field1, i, quoted1 = parse_field(query_str, 0)
         if i >= len(query_str) or query_str[i] != ":":
-            raise ValueError("Invalid query format: Missing colon separator")
+            raise ValueError("Use a colon between the entry type and name (for example, *:note or author:Smith).")
         i += 1  # Skip the colon
         field2, i, quoted2 = parse_field(query_str, i)
 
@@ -148,14 +125,12 @@ def parse_query(query_str):
         lookup2, pattern2 = process_pattern(field2, quoted2)
 
         if lookup1 and lookup2:
-            q = Q(**{f"entry_class__subtype__{lookup1}": pattern1}) & Q(
-                **{f"name__{lookup2}": pattern2}
-            )
+            q = Q(**{f"entry_class__subtype__{lookup1}": pattern1}) & Q(**{f"name__{lookup2}": pattern2})
         elif lookup1:
             q = Q(**{f"entry_class__subtype__{lookup1}": pattern1})
         elif lookup2:
             q = Q(**{f"name__{lookup2}": pattern2})
         else:
-            q = ~Q(pk__in=[])  # Empty
+            q = ~Q(pk__in=[])  # Match all (both fields were lone '*')
 
     return q

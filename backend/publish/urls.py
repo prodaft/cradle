@@ -1,14 +1,17 @@
+"""URL routing for publish app: reports (list/create, formats, detail, retry)."""
+
 from django.urls import path
-from .views.publish import PublishReportAPIView
+
+from .views.publish import ReportFormatsAPIView
 from .views.reports import (
-    ReportListDeleteAPIView,
     ReportDetailAPIView,
+    ReportListAPIView,
     ReportRetryAPIView,
 )
 
 urlpatterns = [
-    path("publish/", PublishReportAPIView.as_view(), name="publish-report"),
-    path("", ReportListDeleteAPIView.as_view(), name="report-list-delete"),
-    path("<uuid:pk>/", ReportDetailAPIView.as_view(), name="report-detail"),
-    path("<uuid:pk>/retry/", ReportRetryAPIView.as_view(), name="report-retry"),
+    path("", ReportListAPIView.as_view(), name="report_list"),
+    path("formats/", ReportFormatsAPIView.as_view(), name="report_formats"),
+    path("<uuid:report_id>/", ReportDetailAPIView.as_view(), name="report_detail"),
+    path("<uuid:report_id>/retry/", ReportRetryAPIView.as_view(), name="report_retry"),
 ]

@@ -1,0 +1,109 @@
+diff --git a/node_modules/@prosemark/core/.bun-tag-206b4c910dff3293 b/.bun-tag-206b4c910dff3293
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/dist/main.d.ts b/dist/main.d.ts
+index d3e664a02f47f48af8de3133af8aa952ce4fbe2c..d57332db3943d92b05bffbd3ae783f7315de11d6 100644
+--- a/dist/main.d.ts
++++ b/dist/main.d.ts
+@@ -23,6 +23,8 @@ declare const escapeMarkdownSyntaxExtension: MarkdownConfig;
+ //#endregion
+ //#region lib/fold/core.d.ts
+ declare const foldExtension: StateField<DecorationSet>;
++/** When true, rendered syntax stays rendered whatever the selection. */
++declare const revealSuspended: Facet<boolean, boolean>;
+ interface FoldableSyntaxSpec {
+   nodePath: string | string[] | ((nodePath: string) => boolean);
+   buildDecorations?: (state: EditorState, node: SyntaxNodeRef, selectionTouchesRange: boolean) => Range<Decoration> | Range<Decoration>[] | undefined;
+@@ -211,5 +213,5 @@ declare const prosemarkLightThemeSetup: () => Extension;
+ declare const prosemarkMarkdownFormattingKeymap: readonly KeyBinding[];
+ declare function prosemarkMarkdownFormattingKeymapExtension(): Extension;
+ //#endregion
+-export { ClickLinkHandler, FRONTMATTER_LANGUAGE_LABEL, SOFT_INDENT_LINE_CLASS, SoftIndentPrefixBounds, additionalMarkdownSyntaxTags, baseSyntaxHighlights, baseTheme, blockQuoteExtension, bulletListExtension, clickLinkExtension, clickLinkHandler, codeBlockDecorationsExtension, codeFenceTheme, dashExtension, dashMarkdownSyntaxExtension, defaultClickLinkHandler, defaultFoldableSyntaxExtensions, defaultHideExtensions, emojiExtension, emojiMarkdownSyntaxExtension, escapeMarkdownSyntaxExtension, eventHandlersWithClass, fixedTabWidthExtension, foldExtension, foldableSyntaxFacet, frontmatterMarkdownSyntaxExtension, generalSyntaxHighlights, hideExtension, horizonalRuleExtension, imageExtension, isFrontmatterNode, isInlineMathNode, lightTheme, markdownTags, matchSoftIndentPrefix, mathDelimiterTag, mathFormulaTag, mathMarkdownSyntaxExtension, measureSoftIndentWidth, nestedLinkAsPlainText, prosemarkBaseThemeSetup, prosemarkBasicSetup, prosemarkLightThemeSetup, prosemarkMarkdownFormattingKeymap, prosemarkMarkdownFormattingKeymapExtension, prosemarkMarkdownSyntaxExtensions, revealBlockOnArrowExtension, selectAllDecorationsOnSelectExtension, softIndentExtension, softIndentMeasurePos, softIndentPrefixBounds, taskExtension };
++export { ClickLinkHandler, FRONTMATTER_LANGUAGE_LABEL, SOFT_INDENT_LINE_CLASS, SoftIndentPrefixBounds, additionalMarkdownSyntaxTags, baseSyntaxHighlights, baseTheme, blockQuoteExtension, bulletListExtension, clickLinkExtension, clickLinkHandler, codeBlockDecorationsExtension, codeFenceTheme, dashExtension, dashMarkdownSyntaxExtension, defaultClickLinkHandler, defaultFoldableSyntaxExtensions, defaultHideExtensions, emojiExtension, emojiMarkdownSyntaxExtension, escapeMarkdownSyntaxExtension, eventHandlersWithClass, fixedTabWidthExtension, foldExtension, foldableSyntaxFacet, frontmatterMarkdownSyntaxExtension, generalSyntaxHighlights, hideExtension, horizonalRuleExtension, imageExtension, isFrontmatterNode, isInlineMathNode, lightTheme, markdownTags, matchSoftIndentPrefix, mathDelimiterTag, mathFormulaTag, mathMarkdownSyntaxExtension, measureSoftIndentWidth, nestedLinkAsPlainText, prosemarkBaseThemeSetup, prosemarkBasicSetup, prosemarkLightThemeSetup, prosemarkMarkdownFormattingKeymap, prosemarkMarkdownFormattingKeymapExtension, prosemarkMarkdownSyntaxExtensions, revealBlockOnArrowExtension, revealSuspended, selectAllDecorationsOnSelectExtension, softIndentExtension, softIndentMeasurePos, softIndentPrefixBounds, taskExtension };
+ //# sourceMappingURL=main.d.ts.map
+\ No newline at end of file
+diff --git a/dist/main.js b/dist/main.js
+index f206c41d9093e65db7d7d581b2257d31976878e5..14415ef3ce26a2159879c155f0a6eeb584f213e9 100644
+--- a/dist/main.js
++++ b/dist/main.js
+@@ -38,6 +38,18 @@ function stateWORDAt(state, pos) {
+ function rangeTouchesRange(a, b) {
+ 	return a.from <= b.to && b.from <= a.to;
+ }
++/**
++* When true, rendered syntax stays rendered whatever the selection (e.g. while a
++* pointer selection is still being dragged).
++*/
++const revealSuspended = Facet.define({ combine: (values) => values.some(Boolean) });
++/** Read-only views never unfold rendered syntax back to raw markdown. */
++function revealRanges(state) {
++	return state.readOnly || state.facet(revealSuspended) ? [] : state.selection.ranges;
++}
++function revealStateChanged(tr) {
++	return tr.startState.readOnly !== tr.state.readOnly || tr.startState.facet(revealSuspended) !== tr.state.facet(revealSuspended);
++}
+ function selectionTouchesRange(selection, b) {
+ 	return selection.some((range) => rangeTouchesRange(range, b));
+ }
+@@ -76,7 +88,7 @@ const buildDecorations$1 = (state) => {
+ 	const specs = state.facet(hidableNodeFacet);
+ 	specs.map(checkSpec);
+ 	syntaxTree(state).iterate({ enter: (node) => {
+-		const selectionTouchesNodeRange = state.selection.ranges.some((range) => rangeTouchesRange(node, range));
++		const selectionTouchesNodeRange = revealRanges(state).some((range) => rangeTouchesRange(node, range));
+ 		for (const spec of specs) {
+ 			if (spec.nodeName instanceof Function) {
+ 				if (!spec.nodeName(node.type.name)) continue;
+@@ -85,7 +97,7 @@ const buildDecorations$1 = (state) => {
+ 			} else if (node.type.name !== spec.nodeName) continue;
+ 			if (spec.unhideZone) {
+ 				const res = spec.unhideZone(state, node);
+-				if (state.selection.ranges.some((range) => rangeTouchesRange(res, range))) continue;
++				if (revealRanges(state).some((range) => rangeTouchesRange(res, range))) continue;
+ 			}
+ 			if (spec.nodeDecoration) decorations.push(spec.nodeDecoration.range(node.from, node.to));
+ 			if (selectionTouchesNodeRange) continue;
+@@ -111,7 +123,7 @@ const hideExtension = StateField.define({
+ 		return buildDecorations$1(state);
+ 	},
+ 	update(deco, tr) {
+-		if (tr.docChanged || tr.selection || syntaxTree(tr.startState) !== syntaxTree(tr.state)) return buildDecorations$1(tr.state);
++		if (tr.docChanged || tr.selection || revealStateChanged(tr) || syntaxTree(tr.startState) !== syntaxTree(tr.state)) return buildDecorations$1(tr.state);
+ 		return deco.map(tr.changes);
+ 	},
+ 	provide: (f) => [EditorView.decorations.from(f), hideTheme]
+@@ -293,7 +305,7 @@ const buildDecorations = (state) => {
+ 	const decorations = [];
+ 	const specs = state.facet(foldableSyntaxFacet);
+ 	syntaxTree(state).iterate({ enter: (node) => {
+-		const selectionTouchesNodeRange = selectionTouchesRange(state.selection.ranges, node);
++		const selectionTouchesNodeRange = selectionTouchesRange(revealRanges(state), node);
+ 		const lineage = [];
+ 		let node_ = node;
+ 		while (node_) {
+@@ -307,7 +319,7 @@ const buildDecorations = (state) => {
+ 			} else if (spec.nodePath instanceof Array) {
+ 				if (!spec.nodePath.some((testPath) => path.endsWith(testPath))) continue;
+ 			} else if (!path.endsWith(spec.nodePath)) continue;
+-			const selectionTouchesRange_ = spec.unfoldZone ? selectionTouchesRange(state.selection.ranges, spec.unfoldZone(state, node)) : selectionTouchesNodeRange;
++			const selectionTouchesRange_ = spec.unfoldZone ? selectionTouchesRange(revealRanges(state), spec.unfoldZone(state, node)) : selectionTouchesNodeRange;
+ 			if (!spec.keepDecorationOnUnfold && selectionTouchesRange_) return;
+ 			if (spec.buildDecorations) {
+ 				const res = spec.buildDecorations(state, node, selectionTouchesRange_);
+@@ -323,7 +335,7 @@ const foldExtension = StateField.define({
+ 		return buildDecorations(state);
+ 	},
+ 	update(deco, tr) {
+-		if (tr.docChanged || tr.selection || syntaxTree(tr.startState) !== syntaxTree(tr.state)) return buildDecorations(tr.state);
++		if (tr.docChanged || tr.selection || revealStateChanged(tr) || syntaxTree(tr.startState) !== syntaxTree(tr.state)) return buildDecorations(tr.state);
+ 		return deco.map(tr.changes);
+ 	},
+ 	provide: (f) => [EditorView.decorations.from(f)]
+@@ -1822,5 +1834,5 @@ const prosemarkBaseThemeSetup = () => [
+ const prosemarkLightThemeSetup = () => [prosemarkBaseThemeSetup(), lightTheme];
+ 
+ //#endregion
+-export { FRONTMATTER_LANGUAGE_LABEL, SOFT_INDENT_LINE_CLASS, additionalMarkdownSyntaxTags, baseSyntaxHighlights, baseTheme, blockQuoteExtension, bulletListExtension, clickLinkExtension, clickLinkHandler, codeBlockDecorationsExtension, codeFenceTheme, dashExtension, dashMarkdownSyntaxExtension, defaultClickLinkHandler, defaultFoldableSyntaxExtensions, defaultHideExtensions, emojiExtension, emojiMarkdownSyntaxExtension, escapeMarkdownSyntaxExtension, eventHandlersWithClass, fixedTabWidthExtension, foldExtension, foldableSyntaxFacet, frontmatterMarkdownSyntaxExtension, generalSyntaxHighlights, hideExtension, horizonalRuleExtension, imageExtension, isFrontmatterNode, isInlineMathNode, lightTheme, markdownTags, matchSoftIndentPrefix, mathDelimiterTag, mathFormulaTag, mathMarkdownSyntaxExtension, measureSoftIndentWidth, nestedLinkAsPlainText, prosemarkBaseThemeSetup, prosemarkBasicSetup, prosemarkLightThemeSetup, prosemarkMarkdownFormattingKeymap, prosemarkMarkdownFormattingKeymapExtension, prosemarkMarkdownSyntaxExtensions, revealBlockOnArrowExtension, selectAllDecorationsOnSelectExtension, softIndentExtension, softIndentMeasurePos, softIndentPrefixBounds, taskExtension };
++export { FRONTMATTER_LANGUAGE_LABEL, SOFT_INDENT_LINE_CLASS, additionalMarkdownSyntaxTags, baseSyntaxHighlights, baseTheme, blockQuoteExtension, bulletListExtension, clickLinkExtension, clickLinkHandler, codeBlockDecorationsExtension, codeFenceTheme, dashExtension, dashMarkdownSyntaxExtension, defaultClickLinkHandler, defaultFoldableSyntaxExtensions, defaultHideExtensions, emojiExtension, emojiMarkdownSyntaxExtension, escapeMarkdownSyntaxExtension, eventHandlersWithClass, fixedTabWidthExtension, foldExtension, foldableSyntaxFacet, frontmatterMarkdownSyntaxExtension, generalSyntaxHighlights, hideExtension, horizonalRuleExtension, imageExtension, isFrontmatterNode, isInlineMathNode, lightTheme, markdownTags, matchSoftIndentPrefix, mathDelimiterTag, mathFormulaTag, mathMarkdownSyntaxExtension, measureSoftIndentWidth, nestedLinkAsPlainText, prosemarkBaseThemeSetup, prosemarkBasicSetup, prosemarkLightThemeSetup, prosemarkMarkdownFormattingKeymap, prosemarkMarkdownFormattingKeymapExtension, prosemarkMarkdownSyntaxExtensions, revealBlockOnArrowExtension, revealSuspended, selectAllDecorationsOnSelectExtension, softIndentExtension, softIndentMeasurePos, softIndentPrefixBounds, taskExtension };
+ //# sourceMappingURL=main.js.map
+\ No newline at end of file

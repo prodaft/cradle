@@ -1,105 +1,37 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from core.openapi import get_common_error_responses
+from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
+
+from ..models import DownloadStrategies
 from ..serializers import (
-    PublishReportSerializer,
-    ReportSerializer,
     PublishStrategiesResponseSerializer,
 )
-from ..models import PublishedReport
-from notes.models import Note
-from ..strategies import PUBLISH_STRATEGIES
-from ..models import UploadStrategies, DownloadStrategies
-from ..tasks import generate_report
-
-from drf_spectacular.utils import extend_schema, extend_schema_view
 
 
 @extend_schema_view(
     get=extend_schema(
-        summary="Get publish strategies",
+        operation_id="reports_formats_retrieve",
+        summary="Get report formats",
         description="Returns available upload and download strategies for publishing reports.",  # noqa: E501
         responses={
             200: PublishStrategiesResponseSerializer,
-            401: {"description": "User is not authenticated"},
-        },
-    ),
-    post=extend_schema(
-        summary="Create published report",
-        description="Creates a new published report from selected notes using specified strategy.",  # noqa: E501
-        request=PublishReportSerializer,
-        responses={
-            200: ReportSerializer,
-            400: {"description": "Invalid request data"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "Note is not publishable"},
-            404: {"description": "One or more notes not found or strategy not found"},
+            **get_common_error_responses(),
         },
     ),
 )
-class PublishReportAPIView(APIView):
-    authentication_classes = [JWTAuthentication]
+class ReportFormatsAPIView(APIView):
+    """List the formats a report can be generated in."""
+
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        upload_strategies = [
-            {"label": choice.label, "strategy": choice.value}
-            for choice in UploadStrategies
-        ]
-        download_strategies = [
-            {"label": choice.label, "strategy": choice.value}
-            for choice in DownloadStrategies
-        ]
-        return Response({"upload": upload_strategies, "download": download_strategies})
-
-    def post(self, request):
-        serializer = PublishReportSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        data = serializer.validated_data
-
-        note_ids = data["note_ids"]
-        title = data["title"]
-        strategy_key = data["strategy"]
-        anonymized = data["anonymized"]
-
-        user = request.user
-
-        notes = Note.objects.filter(publishable=True, id__in=note_ids)
-        if notes.count() != len(note_ids):
-            return Response(
-                {"detail": "One or more notes not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        for note in notes:
-            if not note.publishable:
-                return Response(
-                    {"detail": f"Note {note.id} is not publishable."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-
-        publisher_factory = PUBLISH_STRATEGIES.get(strategy_key)
-
-        if publisher_factory is None:
-            return Response(
-                {"detail": "Strategy not found."}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        report = PublishedReport.objects.create(
-            title=title,
-            user=user,
-            strategy=strategy_key,
-        )
-
-        report.anonymized = anonymized
-        report.save()
-        report.notes.set(notes)
-        report.log_create(user)
-
-        generate_report.delay(report.id)
-
-        return Response(ReportSerializer(report).data, status=status.HTTP_201_CREATED)
+    def get(self, request: Request) -> Response:
+        """Return available download strategies."""
+        download_strategies = [{"label": choice.label, "strategy": choice.value} for choice in DownloadStrategies]
+        return Response({"download": download_strategies}, status=status.HTTP_200_OK)

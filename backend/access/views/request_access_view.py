@@ -1,35 +1,32 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+"""View for requesting access to an entity."""
+
+from typing import cast
+
+from django.db.models import QuerySet
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from entries.enums import EntryType
-from ..models import Access
-from ..enums import AccessType
+from core.openapi import get_common_error_responses, get_error_responses
+from entries.exceptions import EntityNotFoundException, EntriesErrorCodes
 from entries.models import Entry
 from notifications.models import AccessRequestNotification
-from django.db import transaction
+from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
-from typing import cast
-from ..serializers import RequestAccessSerializer
 
-from uuid import UUID
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from ..enums import AccessType
+from ..serializers import RequestAccessSerializer, RequestEntitiesAccessSerializer
 
 
 @extend_schema_view(
     post=extend_schema(
+        operation_id="entities_access_requests_create",
         summary="Request access to entity",
-        description="Allows a user to request access for an entity. All users with read-write access for that specific entity will receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",  # noqa: E501
+        description="Allows a user to request access for an entity. The leads of the entity's owning team are notified (admins if it has none); for an entity without an owning team, all admins and managers are. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",  # noqa: E501
         parameters=[
-            OpenApiParameter(
-                name="entity_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the entity to request access for",
-            ),
             OpenApiParameter(
                 name="subtype",
                 type=str,
@@ -39,75 +36,86 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
             ),
         ],
         responses={
-            200: {"description": "Access request sent successfully"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Entity does not exist"},
+            201: {"description": "Access request sent successfully"},
+            **get_error_responses(
+                EntriesErrorCodes.ENTITY_NOT_FOUND,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
         },
     )
 )
 class RequestAccess(APIView):
-    authentication_classes = [JWTAuthentication]
+    """Request access to an entity; notifies users with read-write access."""
+
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = RequestAccessSerializer
 
-    def post(self, request: Request, entity_id: UUID) -> Response:
-        """Allows a user to request access for an Entity. All users with read-write
-        access for that specific Entity will receive a Notification. If the user
-        making the request already has read-write access, no Notifications are
-        sent but the request is deemed successful.
-
-        Args:
-            request: The request that was sent
-            user_id: Id of the entity for which the user requests access
-
-        Returns:
-            Response(status=200):
-                if the request was successful
-            Response("User is not authenticated", status=401):
-                if the user is not authenticated
-            Response("Entity does not exist", status=404):
-                if the entity does not exist
-        """
-
+    def post(self, request: Request, entity_id: int) -> Response:
+        """Request access to an entity; notifies users with read-write access. See schema."""
         serializer = self.serializer_class(
-            data={
-                "entity_id": entity_id,
-                "subtype": request.query_params.get("subtype", None),
-            }
+            data={"entity_id": entity_id, "subtype": request.query_params.get("subtype")}
         )
         serializer.is_valid(raise_exception=True)
 
         user: CradleUser = cast(CradleUser, request.user)
-        subtype = serializer.validated_data.get("subtype", None)
+        subtype = serializer.validated_data.get("subtype")
 
         try:
             if subtype:
-                entity = Entry.objects.get(id=entity_id, entry_class_id=subtype)
+                entity = Entry.entities.get(id=entity_id, entry_class_id=subtype)
             else:
-                entity = Entry.objects.get(id=entity_id)
+                entity = Entry.entities.get(id=entity_id)
         except Entry.DoesNotExist:
-            return Response(status=status.HTTP_200_OK)
+            raise EntityNotFoundException(detail="That entity could not be found.")
 
-        if (
-            user.is_cradle_admin
-            or entity.entry_class.type == EntryType.ARTIFACT
-            or Access.objects.filter(
-                user=user, entity=entity, access_type=AccessType.READ_WRITE
-            )
-        ):
-            return Response(status=status.HTTP_200_OK)
+        _request_read_write(user, Entry.entities.filter(id=entity.id))
+        return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)
 
-        notified_user_ids = Access.objects.get_users_with_access(entity.id)
-        with transaction.atomic():
-            for notified_user_id in notified_user_ids:
-                AccessRequestNotification.objects.create(
-                    user_id=notified_user_id,
-                    requesting_user=user,
-                    entity=entity,
-                    message=(
-                        f"User {user.username} has requested access for "
-                        f"entity {entity.name}"
-                    ),
-                )
 
-            return Response(status=status.HTTP_200_OK)
+def _request_read_write(user: CradleUser, entities: QuerySet[Entry]) -> None:
+    """Ask for read-write access to ``entities``, as the single and bulk entity requests do."""
+    AccessRequestNotification.request_access(
+        user,
+        entities,
+        {AccessType.READ_WRITE},
+        lambda entity: f"User {user.username} has requested access for entity {entity.name}",
+    )
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="entities_access_requests_bulk_create",
+        summary="Request access to several entities",
+        description=(
+            "Requests access to several entities at once, notifying the same users as a single request. Each of them "
+            "gets one email listing the entities; entities the user already has read-write access to, or whose "
+            "request the recipient has not read yet, are skipped."
+        ),
+        request=RequestEntitiesAccessSerializer,
+        responses={
+            201: {"description": "Access request sent successfully"},
+            **get_error_responses(EntriesErrorCodes.ENTITY_NOT_FOUND, include_validation_error=True),
+            **get_common_error_responses(),
+        },
+    )
+)
+class RequestEntitiesAccess(APIView):
+    """Request access to several entities in one go."""
+
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = RequestEntitiesAccessSerializer
+
+    def post(self, request: Request) -> Response:
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        entity_ids = set(serializer.validated_data["entity_ids"])
+
+        entities = Entry.entities.filter(id__in=entity_ids)
+        if entities.count() != len(entity_ids):
+            raise EntityNotFoundException(detail="Some of those entities could not be found.")
+
+        _request_read_write(cast(CradleUser, request.user), entities)
+        return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)

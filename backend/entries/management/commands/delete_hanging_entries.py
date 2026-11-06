@@ -1,14 +1,18 @@
+"""Management command to delete unreferenced artifacts."""
+
 from django.core.management.base import BaseCommand
-from entries.models import Entry
+
+from ...tasks import delete_hanging_artifacts
 
 
 class Command(BaseCommand):
+    help = "Delete artifacts that are not referenced by any relation, note or entity."
+
     def handle(self, *args, **options):
-        """
-        Deletes the artifacts that are not referenced by any note
-        """
-        hanging = Entry.objects.is_artifact().unreferenced()
+        """Delete all hanging (unreferenced) artifacts."""
+        count = delete_hanging_artifacts()
 
-        print(f"Found {hanging.count()} hanging artifacts. Deleting.")
-
-        hanging.delete()
+        if count == 0:
+            self.stdout.write("No hanging artifacts found.")
+        else:
+            self.stdout.write(f"Deleted {count} hanging artifact(s).")

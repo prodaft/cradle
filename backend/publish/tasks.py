@@ -1,3 +1,8 @@
+"""Celery tasks for asynchronous report generation.
+
+Reports are written with ``save_fields()``, never ``save()``: a report deleted while it is generated must stay deleted.
+"""
+
 import logging
 
 from celery import shared_task
@@ -6,98 +11,61 @@ from notifications.models import (
     ReportProcessingErrorNotification,
     ReportRenderNotification,
 )
-from publish.models import PublishedReport, ReportStatus
-from publish.strategies import PUBLISH_STRATEGIES
 
-# Configure logger for this module.
+from .models import PublishedReport, ReportStatus
+
 logger = logging.getLogger(__name__)
+
+
+def _get_report(report_id):
+    """Fetch report by id. Return None if not found and log the error."""
+    try:
+        return PublishedReport.objects.get(id=report_id)
+    except PublishedReport.DoesNotExist:
+        logger.error("Report with id %s does not exist.", report_id)
+        return None
+
+
+def _notify_error(report, action):
+    """Tell the owner that ``action`` failed, unless the report was deleted meanwhile."""
+    if report.user and PublishedReport.objects.filter(pk=report.pk).exists():
+        ReportProcessingErrorNotification.objects.create(
+            user=report.user,
+            message=f"There was an error {action} your report: {report.title}",
+            published_report=report,
+            error_message=report.error_message,
+        )
+
+
+def _notify_ready(report):
+    if report.user:
+        ReportRenderNotification.objects.create(
+            user=report.user,
+            message=f'Your report "{report.title}" is now ready.',
+            published_report=report,
+        )
 
 
 @shared_task
 def generate_report(report_id):
-    try:
-        report = PublishedReport.objects.get(id=report_id)
-    except PublishedReport.DoesNotExist:
-        logger.error("Report with id %s does not exist.", report_id)
+    """Generate a published report asynchronously and notify the user when done."""
+    report = _get_report(report_id)
+    if report is None:
         return
 
-    user = report.user
-
     try:
-        publisher_factory = PUBLISH_STRATEGIES.get(report.strategy)
-        if publisher_factory is None:
+        publisher = report.publisher
+        if publisher is None:
             raise ValueError("Strategy not found.")
-
-        publisher = publisher_factory(report.anonymized)
-        result = publisher.create_report(report)
-
-        if not result:
-            ReportProcessingErrorNotification.objects.create(
-                user=user,
-                message=f"There was an error processing your report: {report.title}",
-                published_report=report,
-                error_message=report.error_message,
-            )
-            report.status = ReportStatus.ERROR
-            report.save()
+        if not publisher.create_report(report):
+            _notify_error(report, "generating")
             return
 
         report.status = ReportStatus.DONE
-        report.save()
-
-        ReportRenderNotification.objects.create(
-            user=user,
-            message=f'Your report "{report.title}" is now ready.',
-            published_report=report,
-        )
-    except Exception as e:
-        report.status = ReportStatus.ERROR
-        report.error_message = "An unknown error occurred when generating report, please contact your admin."
-        report.save()
-
-        ReportProcessingErrorNotification.objects.create(
-            user=user,
-            message=f"There was an error processing your report: {report.title}",
-            published_report=report,
-            error_message=report.error_message,
-        )
-        raise e
-
-
-@shared_task
-def edit_report(report_id):
-    try:
-        report = PublishedReport.objects.get(id=report_id)
-    except PublishedReport.DoesNotExist:
-        logger.error("Report with id %s does not exist.", report_id)
-        return
-
-    # user = report.user
-    notes = list(report.notes.all())
-    title = report.title
-
-    try:
-        publisher_factory = PUBLISH_STRATEGIES.get(report.strategy)
-        if publisher_factory is None:
-            raise ValueError("Strategy not found.")
-
-        publisher = publisher_factory(report.anonymized)
-        result = publisher.edit_report(report)
-
-        if not result:
-            report.status = ReportStatus.ERROR
-            report.save()
-            return
-
-        report.title = title
-        report.notes.set(notes)
-        report.status = ReportStatus.DONE
-        report.save()
-
-    except Exception as e:
-        report.status = ReportStatus.ERROR
-        report.error_message = (
-            "An unknown error occurred when editing report, please contact your admin."
-        )
-        report.save()
-        raise e
+        if report.save_fields("status"):
+            _notify_ready(report)
+    except Exception:
+        logger.exception("Report generation failed for report %s.", report_id)
+        report.mark_error("An unknown error occurred while generating the report. Please contact your administrator.")
+        _notify_error(report, "generating")
+        raise

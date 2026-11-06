@@ -1,91 +1,109 @@
+import json
+
+from celery import group
+from django.db import transaction
+
+from entries.constants import INTERNAL_SUBTYPES
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
-from intelio.enums import DigestStatus
+from file_transfer.storage import FileTransferStorage
 from notes.processor.task_scheduler import TaskScheduler
+
+from ...tasks.cradle import download_file_for_note
 from ..base import BaseDigest
-import json
 
 
 class CradleDigest(BaseDigest):
+    """Digest for CRADLE JSON reports: notes, entry classes, entries, and file URLs."""
+
     display_name = "CRADLE Report"
+    infer_entities = True
 
     class Meta:
         proxy = True
 
     def _digest(self):
+        """Parse CRADLE JSON report, create notes/entries, and schedule file downloads."""
+        self.ensure_local_file()
         with open(self.path, "r") as report_file:
             try:
                 report_data = json.load(report_file)
-            except json.JSONDecodeError as e:
-                self.status = DigestStatus.ERROR
-                self.errors = ["Invalid JSON format: " + e.msg]
-                self.save()
+            except json.JSONDecodeError, UnicodeDecodeError:
+                self.mark_error("The file contains invalid JSON.")
                 return
 
-        valid_entryclass_fields = set([x.name for x in EntryClass._meta.fields])
+        valid_entryclass_fields = {f.name for f in EntryClass._meta.fields}
+        entry_classes_imported = 0
+        skipped_entry_classes = []
 
-        try:
-            # Import or create entry classes
-            for eclass in report_data.get("entry_classes", []):
-                if not EntryClass.objects.filter(subtype=eclass["subtype"]).exists():
-                    EntryClass.objects.create(
-                        **{
-                            k: v
-                            for k, v in eclass.items()
-                            if k in valid_entryclass_fields
-                        }
-                    )
-
-            # Cache existing entity subtypes
-            entity_subtypes = set(
-                EntryClass.objects.filter(type=EntryType.ENTITY).values_list(
-                    "subtype", flat=True
-                )
+        for eclass in report_data.get("entry_classes", []):
+            if EntryClass.objects.filter(subtype=eclass["subtype"]).exists():
+                continue
+            if not self.user.is_manager or eclass["subtype"] in INTERNAL_SUBTYPES:
+                skipped_entry_classes.append(eclass["subtype"])
+                continue
+            fields = {k: v for k, v in eclass.items() if k in valid_entryclass_fields}
+            if isinstance(fields.get("options"), list):
+                fields["options"] = "\n".join(fields["options"])
+            EntryClass.objects.create(**fields)
+            entry_classes_imported += 1
+        if skipped_entry_classes:
+            self.append_warning(
+                f"Entry types not created, as you may not create them: {', '.join(skipped_entry_classes)}"
             )
 
-            # Create new entries if needed
-            for entry in report_data.get("entries", []):
-                if (
-                    entry["subtype"] in entity_subtypes
-                    and not Entry.objects.filter(
-                        name=entry["name"], entry_class_id=entry["subtype"]
-                    ).exists()
-                ):
-                    Entry.objects.create(
-                        name=entry["name"],
-                        entry_class_id=entry["subtype"],
-                        description=entry["description"],
-                    )
+        entity_subtypes = set(EntryClass.objects.filter(type=EntryType.ENTITY).values_list("subtype", flat=True))
+        skipped_entities = []
 
-            created_notes = []
-            # bucket_name = self.user.id
-            files_scheduled = 0
-
-            for note_data in report_data.get("notes", []):
-                scheduler = TaskScheduler(
-                    self.user, content=note_data["content"], digest=self
+        for entry in report_data.get("entries", []):
+            if (
+                entry["subtype"] in entity_subtypes
+                and not Entry.objects.filter(name=entry["name"], entry_class_id=entry["subtype"]).exists()
+            ):
+                if not self.user.is_admin:
+                    skipped_entities.append(f"{entry['subtype']}:{entry['name']}")
+                    continue
+                Entry.objects.create(
+                    name=entry["name"],
+                    entry_class_id=entry["subtype"],
+                    description=entry.get("description", ""),
                 )
-                created_note = scheduler.run_pipeline(validate=False)
+        if skipped_entities:
+            self.append_warning(
+                f"Entities not created, as only administrators can import them: {', '.join(skipped_entities)}"
+            )
 
-                file_urls = note_data.get("file_urls", {})
-                for file_identifier, url in file_urls.items():
-                    # download_file_for_note.delay(
-                    #     created_note.id, file_identifier, url, bucket_name
-                    # )
-                    files_scheduled += 1
+        created_notes = []
+        download_tasks = []
 
-                created_note.save()
-                created_notes.append(created_note)
+        for note_data in report_data.get("notes", []):
+            scheduler = TaskScheduler(self.user, content=note_data["content"], digest=self)
+            try:
+                created_note = scheduler.run_pipeline(validate=True)
+            except Exception:
+                self.append_error("A note could not be created from this report.")
+                continue
 
-            summary = {
-                "notes_imported": len(created_notes),
-                "entry_classes_imported": len(report_data.get("entry_classes", [])),
-                "files_scheduled": files_scheduled,
-            }
+            file_urls = note_data.get("file_urls", {})
+            for file_identifier, url in file_urls.items():
+                download_tasks.append(
+                    download_file_for_note.si(
+                        created_note.id, file_identifier, url, FileTransferStorage.bucket_name, self.id
+                    )
+                )
+            created_note.save()
+            created_notes.append(created_note)
 
-            return summary
-        except Exception as e:
-            self.status = DigestStatus.ERROR
-            self.errors = [str(e)]
-            self.save()
-            raise e
+        self.summary = {
+            "notes_imported": len(created_notes),
+            "entry_classes_imported": entry_classes_imported,
+            "files_scheduled": len(download_tasks),
+            "files_failed": 0,
+            "files_downloaded": 0,
+        }
+        self.save(update_fields=["summary"])
+
+        if download_tasks:
+            transaction.on_commit(lambda: group(*download_tasks).apply_async())
+        else:
+            self.finalize()

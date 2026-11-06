@@ -1,32 +1,52 @@
+import inspect
+
 from django.conf import settings
-from django.db import models
 from django.core.cache import cache
+from django.db import models
+from django_lifecycle import AFTER_DELETE, AFTER_SAVE, LifecycleModelMixin, hook
 
 
-class Setting(models.Model):
-    key = models.CharField(max_length=255, unique=True)
-    value = models.JSONField()
+class Setting(LifecycleModelMixin, models.Model):
+    """Stored key-value setting, namespaced via dotted keys (e.g. notes.min_entries)."""
+
+    key = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="Namespaced setting key (e.g. notes.min_entries).",
+    )
+    value = models.JSONField(help_text="Setting value (JSON-serializable).")
 
     def __str__(self):
         return f"{self.key}: {self.value}"
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+    @hook(AFTER_SAVE, on_commit=True)
+    @hook(AFTER_DELETE, on_commit=True)
+    def invalidate_cache(self):
+        """Clear the cached value once the change is committed, so a concurrent read cannot re-cache the old one."""
         cache.delete(f"setting:{self.key}")
 
 
 class BaseSettingsSection:
+    """Base for settings sections; reads from DB/cache with fallback to defaults."""
+
     prefix = ""
 
-    def get(self, key, default=None):
-        full_key = f"{self.prefix}.{key}"
-        from .models import Setting
+    @classmethod
+    def defaults(cls) -> dict:
+        """Map each setting key in this section to the default its property passes to ``get``."""
+        found: dict = {}
+        probe = cls.__new__(cls)
+        probe.get = lambda key, default=None: found.setdefault(key, default)
+        for _, prop in inspect.getmembers(cls, lambda m: isinstance(m, property)):
+            prop.fget(probe)
+        return found
 
+    def get(self, key, default=None):
+        """Get setting value from cache/DB, falling back to default."""
+        full_key = f"{self.prefix}.{key}"
         value = cache.get_or_set(
             f"setting:{full_key}",
-            lambda: Setting.objects.filter(key=full_key)
-            .values_list("value", flat=True)
-            .first(),
+            lambda: Setting.objects.filter(key=full_key).values_list("value", flat=True).first(),
             timeout=300,
         )
 

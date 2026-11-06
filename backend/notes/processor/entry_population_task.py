@@ -1,11 +1,14 @@
+"""Task to create missing entries for a note."""
+
 from typing import Iterable, Tuple
 
-from celery import Celery
+from celery.canvas import Signature
+
 from entries.models import Entry
 
-from .base_task import BaseTask
 from ..models import Note
 from ..tasks import entry_population_task
+from .base_task import BaseTask
 
 
 class EntryPopulationTask(BaseTask):
@@ -13,22 +16,17 @@ class EntryPopulationTask(BaseTask):
     def is_validator(self) -> bool:
         return False
 
-    def run(
-        self, note: Note, entries: Iterable[Entry]
-    ) -> Tuple[Celery, Iterable[Entry]]:
-        """
-        Create the entries that are missing for a note.
+    def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[Signature, Iterable[Entry]]:
+        """Create the entries that are missing for a note.
 
         Args:
-            note: The note object being processde
+            note: The note object being processed.
+            entries: Entries from previous tasks (passed through).
 
         Returns:
-            The processed note object.
+            Tuple of (Celery task signature, entries).
         """
-
         return (
-            entry_population_task.si(
-                note.id, user_id=self.user.id if self.user else None
-            ),
+            entry_population_task.si(note.id, user_id=self.user.id if self.user else None),
             entries,
         )

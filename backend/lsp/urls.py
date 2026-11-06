@@ -1,4 +1,7 @@
+"""URL routing for LSP API (types, completion trie)."""
+
 from django.urls import path
+
 from .views import lsp_view
 
 urlpatterns = [

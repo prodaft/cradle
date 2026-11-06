@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- Phones zoom out to fit an A4 sheet (210mm plus margins) instead of scrolling sideways. -->
+  <meta name="viewport" content="width=860" />
+  <title>{{ title }}</title>
+  <meta name="author" content="{{ organization }}" />
+  <meta name="generator" content="CRADLE" />
+  <style>
+    /* Override any of these from REPORT_BRANDING["stylesheet"]. */
+    :root {
+      --report-accent: #3d536e;
+      --report-accent-dark: #1b2a3a;
+      --report-text: #1f2328;
+      --report-muted: #6b7280;
+      --report-rule: #000000;
+      --report-tint: #f3f5f8;
+      --report-band: #dde3ea;
+      --report-callout: #f0903c;
+      --report-code-bg: #ebebeb;
+      --report-font: {{ font_stack|safe }};
+      --report-mono: "Liberation Mono", "DejaVu Sans Mono", monospace;
+      /* Set from REPORT_BRANDING; the colors default to the accent. */
+      --report-font-size: {{ font_size }};
+      --report-header-size: {{ header_font_size }};
+      --report-page-number: {{ page_number_color }};
+      --report-toc: {{ toc_color }};
+      --report-weight: {{ font_weight }};
+      --report-weight-bold: {{ bold_weight }};
+      --report-indent: {{ paragraph_indent }};
+    }
+
+    {{ font_faces|safe }}
+
+    @page {
+      size: A4;
+      margin: 25mm {{ page_margin }} {% if disclaimer %}44mm{% else %}26mm{% endif %} {{ page_margin }};
+
+      /* Puts the header rule 17.3mm from the top. */
+      @top-center {
+        content: element(page-header);
+        width: 100%;
+        vertical-align: bottom;
+        padding-bottom: 7.5mm;
+      }
+
+      @bottom-center {
+        content: element(page-footer);
+        width: 100%;
+        vertical-align: top;
+        padding-top: 4mm;
+      }
+    }
+
+    @page cover {
+      margin: 0;
+
+      @top-center {
+        content: none;
+      }
+
+      @bottom-center {
+        content: none;
+      }
+    }
+
+    html {
+      font-family: var(--report-font);
+      font-size: var(--report-font-size);
+      font-weight: var(--report-weight);
+      line-height: 1.45;
+      color: var(--report-text);
+    }
+
+    body {
+      margin: 0;
+    }
+
+    /* Running header and footer */
+    /* Badge and title sit directly on the rule. */
+    .page-header {
+      position: running(page-header);
+      border-bottom: 0.4pt solid var(--report-rule);
+      font-size: var(--report-header-size);
+      line-height: 1.15;
+      color: #000000;
+    }
+
+    .page-header .tlp {
+      margin-bottom: 0.4mm;
+    }
+
+    .page-header .doc-title {
+      float: right;
+      max-width: 70%;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .page-footer {
+      position: running(page-footer);
+      border-top: 0.4pt solid var(--report-rule);
+      padding-top: 2mm;
+      font-size: 8.5pt;
+    }
+
+    .page-footer .row {
+      height: 8mm;
+    }
+
+    .page-footer .brand {
+      float: left;
+      height: 8mm;
+    }
+
+    .page-footer .brand img,
+    .page-footer .brand svg {
+      height: 7mm;
+      width: auto;
+      vertical-align: middle;
+    }
+
+    /* The wordmark is 2627x679; both sizes are set because the SVG has no width/height. */
+    .page-footer .brand .wordmark svg {
+      height: 6mm;
+      width: 23.2mm;
+      vertical-align: middle;
+    }
+
+    .page-footer .brand .org {
+      margin-left: 2mm;
+      font-weight: var(--report-weight-bold);
+      letter-spacing: 0.8pt;
+      vertical-align: middle;
+    }
+
+    .page-footer .page-number {
+      float: right;
+      line-height: 8mm;
+      color: var(--report-page-number);
+    }
+
+    .page-footer .page-number::after {
+      content: counter(page) " / " counter(pages);
+    }
+
+    .page-footer .disclaimer {
+      clear: both;
+      margin-top: 2.5mm;
+      font-size: 6.5pt;
+      line-height: 1.35;
+      color: #282828;
+      text-align: justify;
+    }
+
+    /* Compact, with about 1mm padding. */
+    .tlp {
+      display: inline-block;
+      padding: 0.4mm 1mm;
+      line-height: 1.15;
+      background: #000000;
+      font-weight: var(--report-weight-bold);
+    }
+
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 120mm;
+      transform: translate(-50%, -50%);
+      opacity: 0.06;
+    }
+
+    /* Cover page: brand strip, hero with a diagonal cut, title band, contact line */
+    .cover {
+      page: cover;
+      position: relative;
+      width: 210mm;
+      height: 297mm;
+      overflow: hidden;
+      background: #ffffff;
+      break-after: page;
+    }
+
+    .cover .cover-brand {
+      position: absolute;
+      top: 9mm;
+      left: 9mm;
+      right: 9mm;
+    }
+
+    .cover .cover-brand .mark img,
+    .cover .cover-brand .mark svg {
+      height: 13mm;
+      width: auto;
+      vertical-align: middle;
+    }
+
+    .cover .cover-brand .wordmark svg {
+      height: 13mm;
+      width: 50.3mm;
+      vertical-align: middle;
+    }
+
+    .cover .cover-brand .org {
+      margin-left: 2.5mm;
+      font-size: 24pt;
+      font-weight: var(--report-weight-bold);
+      letter-spacing: 1.5pt;
+      color: var(--report-accent-dark);
+      vertical-align: middle;
+    }
+
+    .cover .cover-brand .tagline {
+      margin-top: 2.5mm;
+      font-size: 9.5pt;
+      letter-spacing: 0.3pt;
+      text-transform: uppercase;
+      color: var(--report-accent-dark);
+    }
+
+    .cover .cover-brand .tlp {
+      position: absolute;
+      top: 3.5mm;
+      right: 0;
+      font-size: 10pt;
+    }
+
+    .cover .hero {
+      position: absolute;
+      top: 36mm;
+      left: 0;
+      width: 210mm;
+      height: 210mm;
+      background: linear-gradient(160deg, var(--report-accent) 0%, var(--report-accent-dark) 75%);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .cover .hero .hero-mark {
+      position: absolute;
+      top: 38mm;
+      left: 62mm;
+      width: 86mm;
+      height: 86mm;
+      opacity: 0.1;
+    }
+
+    /* Triangles drawn with borders; their hypotenuses form the diagonal cut. */
+    .cover .cut {
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left-style: solid;
+      border-left-color: transparent;
+      border-bottom-style: solid;
+    }
+
+    .cover .cut-dark {
+      top: 160mm;
+      left: -230mm;
+      border-left-width: 440mm;
+      border-bottom-width: 137mm;
+      border-bottom-color: var(--report-accent-dark);
+    }
+
+    .cover .cut-white {
+      top: 174mm;
+      left: -150mm;
+      border-left-width: 360mm;
+      border-bottom-width: 123mm;
+      border-bottom-color: #ffffff;
+    }
+
+    .cover .band {
+      position: absolute;
+      top: 205mm;
+      left: 66mm;
+      width: 144mm;
+      height: 41mm;
+      background: var(--report-band);
+    }
+
+    .cover .band .cover-title {
+      position: absolute;
+      left: 10mm;
+      right: 10mm;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .cover h1 {
+      margin: 0;
+      font-size: 16pt;
+      line-height: 1.4;
+      font-weight: var(--report-weight-bold);
+      color: var(--report-accent);
+      bookmark-level: none;
+    }
+
+    .cover .cover-date {
+      margin-top: 1.5mm;
+      font-size: 9pt;
+      color: var(--report-muted);
+    }
+
+    .cover .contact {
+      position: absolute;
+      left: 9mm;
+      right: 9mm;
+      bottom: 22mm;
+      text-align: center;
+      font-size: 8.5pt;
+      color: var(--report-text);
+      white-space: pre-line;
+    }
+
+    /* Table of contents: one color, body-size text, bold top-level entries without leaders. */
+    .toc {
+      break-after: page;
+      color: var(--report-toc);
+    }
+
+    .toc h2 {
+      margin: 0 0 7.2mm;
+      font-size: 1.3em;
+      font-weight: var(--report-weight-bold);
+      color: inherit;
+      bookmark-level: none;
+    }
+
+    .toc ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .toc li {
+      margin: 0;
+      line-height: 1.25;
+    }
+
+    .toc li.level-1 {
+      margin-top: 3.8mm;
+      font-weight: var(--report-weight-bold);
+    }
+
+    .toc li.level-2 {
+      padding-left: 6mm;
+    }
+
+    .toc li.level-3 {
+      padding-left: 15mm;
+    }
+
+    .toc a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* The em space (not collapsed like a normal space) ends the leader before the number. */
+    .toc a::after {
+      content: leader(" . ") "\2003" target-counter(attr(href), page);
+    }
+
+    .toc li.level-1 a::after {
+      content: leader(" ") target-counter(attr(href), page);
+    }
+
+    /* Number columns widen with depth so each level's titles line up; the space after
+       the number in the markup adds about 1mm. */
+    .toc .num {
+      display: inline-block;
+      min-width: 5mm;
+    }
+
+    .toc li.level-2 .num {
+      min-width: 8mm;
+    }
+
+    .toc li.level-3 .num {
+      min-width: 11mm;
+    }
+
+    /* Report body */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: var(--report-accent);
+      font-weight: var(--report-weight-bold);
+      line-height: 1.25;
+      break-after: avoid;
+    }
+
+    h1 {
+      font-size: 15pt;
+      margin: 9mm 0 4mm;
+      bookmark-level: 1;
+    }
+
+    h2 {
+      font-size: 12.5pt;
+      margin: 7mm 0 3mm;
+      bookmark-level: 2;
+    }
+
+    h3 {
+      font-size: 11pt;
+      margin: 5mm 0 2mm;
+      bookmark-level: 3;
+    }
+
+    h4,
+    h5,
+    h6 {
+      font-size: 1em;
+      margin: 4mm 0 1.5mm;
+      bookmark-level: none;
+    }
+
+    /* Plus the space after the number in the markup. */
+    h1 .num,
+    h2 .num,
+    h3 .num {
+      margin-right: 3mm;
+    }
+
+    main>.note:first-child>h1:first-child {
+      margin-top: 0;
+    }
+
+    /* Indent on the first paragraph under a heading. */
+    h1 + p,
+    h2 + p,
+    h3 + p,
+    h4 + p,
+    h5 + p,
+    h6 + p {
+      text-indent: var(--report-indent);
+    }
+
+    p {
+      margin: 0 0 3mm;
+      text-align: justify;
+      hyphens: auto;
+      orphans: 3;
+      widows: 3;
+    }
+
+    strong,
+    b {
+      font-weight: var(--report-weight-bold);
+    }
+
+    a {
+      color: var(--report-accent);
+      text-decoration: none;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 3mm;
+      padding-left: 6mm;
+    }
+
+    li {
+      margin: 0.8mm 0;
+    }
+
+    hr {
+      border: none;
+      margin: 4mm 0;
+    }
+
+    blockquote {
+      margin: 4mm 0;
+      padding: 2.5mm 4mm;
+      border: 0.8pt solid var(--report-callout);
+      border-radius: 2mm;
+      background: var(--report-tint);
+      break-inside: avoid;
+    }
+
+    blockquote p:last-child {
+      margin-bottom: 0;
+    }
+
+    code {
+      font-family: var(--report-mono);
+      font-size: 0.88em;
+      background: var(--report-code-bg);
+      padding: 0 0.8mm;
+    }
+
+    pre {
+      margin: 3mm 0;
+      padding: 2.5mm 3mm;
+      background: var(--report-code-bg);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: 8.5pt;
+      line-height: 1.35;
+    }
+
+    pre code {
+      padding: 0;
+      font-size: inherit;
+      background: none;
+    }
+
+    main img {
+      display: block;
+      max-width: 100%;
+      max-height: 170mm;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    figure {
+      margin: 4mm 0;
+      break-inside: avoid;
+    }
+
+    figcaption {
+      margin-top: 2mm;
+      text-align: center;
+      font-size: 9pt;
+    }
+
+    figcaption .label {
+      color: var(--report-accent);
+      font-weight: var(--report-weight-bold);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 3mm 0 4mm;
+      font-size: 9pt;
+    }
+
+    th {
+      background: var(--report-accent);
+      color: #ffffff;
+      font-weight: var(--report-weight-bold);
+      text-align: left;
+    }
+
+    th,
+    td {
+      padding: 1.4mm 2.5mm;
+      vertical-align: top;
+      overflow-wrap: anywhere;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: var(--report-tint);
+    }
+
+    tr {
+      break-inside: avoid;
+    }
+
+    thead {
+      display: table-header-group;
+    }
+
+    .entry,
+    .entry-type {
+      padding: 0 0.8mm;
+      border-radius: 0.6mm;
+      overflow-wrap: anywhere;
+    }
+
+    .entry-type {
+      font-size: 8pt;
+    }
+
+    {{ styles|safe }}
+
+    /* Entries appendix */
+    .appendix {
+      break-before: page;
+    }
+
+    .appendix h1 {
+      margin-top: 0;
+    }
+
+    .appendix td:first-child {
+      font-family: var(--report-mono);
+      font-size: 8.5pt;
+    }
+
+    .appendix .empty {
+      color: var(--report-muted);
+      font-style: italic;
+    }
+
+    /* On screen (the HTML report) the pages become A4 sheets: no pagination, so no
+       page numbers, and the footer moves to the end of the sheet. */
+    @media screen {
+      html {
+        background: #d9dde3;
+      }
+
+      body {
+        padding: 8mm 0;
+      }
+
+      .cover,
+      .sheet {
+        width: 210mm;
+        margin: 0 auto 8mm;
+        background: #ffffff;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+      }
+
+      .sheet {
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        min-height: 297mm;
+        padding: 14mm {{ page_margin }} 10mm;
+      }
+
+      .page-header {
+        margin-bottom: 9mm;
+      }
+
+      .page-footer {
+        order: 1;
+        margin-top: auto;
+        padding-top: 2mm;
+      }
+
+      .page-footer .page-number,
+      .toc a::after {
+        display: none;
+      }
+
+      .toc,
+      main,
+      .appendix {
+        margin-bottom: 12mm;
+      }
+    }
+  </style>
+  {% if stylesheet_uri %}<link rel="stylesheet" href="{{ stylesheet_uri }}" />{% endif %}
+  {% if stylesheet_css %}<style>{{ stylesheet_css|safe }}</style>{% endif %}
+</head>
+
+<body>
+  {% if watermark_uri %}<img class="watermark" src="{{ watermark_uri }}" alt="" />{% endif %}
+
+  <div class="cover">
+    <div class="cover-brand">
+      {% if use_wordmark %}
+      <span class="wordmark">{% include "report/cradle_wordmark.svg" %}</span>
+      {% else %}
+      <span class="mark">
+        {% if logo_uri %}
+        <img src="{{ logo_uri }}" alt="" />
+        {% else %}
+        {% include "report/cradle_logo.svg" %}
+        {% endif %}
+      </span>
+      <span class="org">{{ organization }}</span>
+      {% endif %}
+      {% if tagline %}<div class="tagline">{{ tagline }}</div>{% endif %}
+      <span class="tlp" style="color: {{ tlp_color }};">{{ tlp_label }}</span>
+    </div>
+
+    <div class="hero" {% if cover_uri %}style="background-image: url('{{ cover_uri }}');"{% endif %}>
+      {% if not cover_uri %}
+      <svg class="hero-mark" viewBox="0 0 679 679" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 185.383L311.691 0V125.348L0 310.32V185.383Z" fill="#ffffff" />
+        <path d="M0 311.897L311.691 497.28V372L0 186.96V311.897Z" fill="#ffffff" />
+        <path d="M623.45 185.383L311.691 0V125.348L623.45 310.32V185.383Z" fill="#ffffff" />
+        <path d="M623.45 311.897L311.691 497.28V372L623.45 186.96V311.897Z" fill="#ffffff" />
+        <path d="M0 493.305L311.691 678.757V553.409L0 368.437V493.305Z" fill="#ffffff" />
+        <path d="M623.45 493.305L311.691 678.757V553.409L623.45 368.437V493.305Z" fill="#ffffff" />
+      </svg>
+      {% endif %}
+    </div>
+    <div class="cut cut-dark"></div>
+    <div class="cut cut-white"></div>
+
+    <div class="band">
+      <div class="cover-title">
+        <h1>{{ title }}</h1>
+        <div class="cover-date">{{ date|date:"j F Y" }}</div>
+      </div>
+    </div>
+
+    {% if contact %}<div class="contact">{{ contact }}</div>{% endif %}
+  </div>
+
+  <div class="sheet">
+    <div class="page-header">
+      <span class="tlp" style="color: {{ tlp_color }};">{{ tlp_label }}</span>
+      <span class="doc-title">{{ title }}</span>
+    </div>
+
+    <div class="page-footer">
+      <div class="row">
+        <span class="brand">
+          {% if use_wordmark %}
+          <span class="wordmark">{% include "report/cradle_wordmark.svg" %}</span>
+          {% else %}
+          {% if logo_uri %}
+          <img src="{{ logo_uri }}" alt="{{ organization }}" />
+          {% else %}
+          {% include "report/cradle_logo.svg" %}
+          {% endif %}
+          <span class="org">{{ organization }}</span>
+          {% endif %}
+        </span>
+        <span class="page-number"></span>
+      </div>
+      {% if disclaimer %}<div class="disclaimer">{{ disclaimer }}</div>{% endif %}
+    </div>
+
+    {% if include_toc and toc %}
+    <nav class="toc">
+      <h2>Contents</h2>
+      <ul>
+        {% for item in toc %}
+        <li class="level-{{ item.level }}"><a href="#{{ item.id }}"><span class="num">{{ item.number }}</span> {{ item.text }}</a></li>
+        {% endfor %}
+        {% if include_entries %}
+        <li class="level-1"><a href="#appendix-entries"><span class="num"></span> Appendix: Entries</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+
+    <main>{{ body|safe }}</main>
+
+    {% if include_entries %}
+    <section class="appendix">
+      <h1 id="appendix-entries">Appendix: Entries</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Entry</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in entries %}
+          <tr>
+            <td>{{ entry.text }}</td>
+            <td><span class="entry-type" entry-type="{{ entry.type }}">{{ entry.type }}</span></td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="2" class="empty">No entries found in the report.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+  </div>
+</body>
+
+</html>

@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cradle-enricher-dns"
+version = "0.0.0"
+description = "CRADLE Docker enricher: DNS"
+requires-python = ">=3.14"
+dependencies = [
+    "dnspython>=2.6,<3",
+]
+
+[tool.setuptools]
+packages = []
