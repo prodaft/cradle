@@ -7,7 +7,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
 import { getSuccessMessage } from '@/utils/api';
 import { HardDrivesIcon, TrashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
@@ -27,7 +27,7 @@ export default function EntriesSettingsForm() {
         meta: {
             invalidateQueries: [
                 { queryKey: queryKeys.notes.apiList() },
-                { queryKey: queryKeys.knowledgeGraph.all },
+                ...invalidate(...queryKeys.knowledgeGraph.all()),
             ],
             suppressNotification: true,
         },
@@ -50,8 +50,8 @@ export default function EntriesSettingsForm() {
         meta: {
             invalidateQueries: [
                 { queryKey: queryKeys.notes.apiList() },
-                { queryKey: queryKeys.knowledgeGraph.all },
-                { queryKey: queryKeys.entities.all },
+                ...invalidate(...queryKeys.knowledgeGraph.all()),
+                ...invalidate(...queryKeys.entities.all()),
             ],
             suppressNotification: true,
         },

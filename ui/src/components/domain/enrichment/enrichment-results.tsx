@@ -11,7 +11,6 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cradleJsonTheme } from '@/config/json-view';
-import { queryKeys } from '@/hooks/query';
 import {
     EMPTY_SEARCH_STATE,
     FREE_TEXT_SCHEMA,
@@ -29,25 +28,27 @@ import {
     WarningCircleIcon,
     WarningIcon,
 } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 
 type EntrySerializerMinimal = components['schemas']['EntrySerializerMinimal'];
+type EnrichmentRelation = components['schemas']['EnrichmentRelation'];
 
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
-import { useQuery } from '@tanstack/react-query';
+import {
+    dataTableFeatures,
+    type DataTableColumnDef,
+    type DataTableRow,
+} from '@/lib/data-table';
+
 import { useParams } from '@tanstack/react-router';
 import {
-    getCoreRowModel,
-    getExpandedRowModel,
-    useReactTable,
-    type ColumnDef,
+    useTable,
+    type ColumnVisibilityState,
     type ExpandedState,
     type PaginationState,
-    type Row,
     type Updater,
-    type VisibilityState,
 } from '@tanstack/react-table';
 import JsonView from '@uiw/react-json-view';
 import { format } from 'date-fns';
@@ -107,7 +108,7 @@ const entryLabel = (entry?: EntrySerializerMinimal | null): EntryLabel | null =>
 };
 
 const mapRelationsForEntry = (
-    results: any[],
+    results: EnrichmentRelation[],
     activeArtifactId: number | null,
 ): RelationDisplay[] => {
     if (!activeArtifactId) return [];
@@ -115,7 +116,7 @@ const mapRelationsForEntry = (
     return results.map((result) => {
         const entries = [result.src, result.dst].filter(Boolean);
         const targetEntry =
-            entries.find((entry: any) => {
+            entries.find((entry) => {
                 const entryId = normalizeId(entry?.id);
                 return entryId != null && entryId !== activeArtifactId;
             }) || null;
@@ -252,7 +253,7 @@ export default function EnrichmentResults() {
     const [applied, setApplied] = useState<SearchState>(EMPTY_SEARCH_STATE);
     const appliedSearch = applied.q;
     const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>({});
 
     useEffect(() => {
         setPage(1);
@@ -262,23 +263,19 @@ export default function EnrichmentResults() {
         data: requestDetail,
         isLoading,
         isError,
-    } = useQuery({
-        queryKey: queryKeys.enrichment.results.detail(String(id)),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrichments/{enrichment_id}/',
-                { params: { path: { enrichment_id: id } } },
-            );
-            if (error) throw { response, error };
-            return data;
+    } = $api.useQuery(
+        'get',
+        '/intelio/enrichments/{enrichment_id}/',
+        { params: { path: { enrichment_id: id } } },
+        {
+            retry: false,
+            meta: {
+                showErrorToast: false,
+            },
         },
-        retry: false,
-        meta: {
-            showErrorToast: false,
-        },
-    });
+    );
 
-    const request = requestDetail as any;
+    const request = requestDetail;
 
     const dockPanelTitle = useMemo(() => {
         if (isError) {
@@ -303,74 +300,56 @@ export default function EnrichmentResults() {
     useEffect(() => {
         if (request?.enrichers && request.enrichers.length > 0 && !selectedEnricher) {
             const first = request.enrichers[0];
-            setSelectedEnricher(first.enricher_type ?? first.enricherType);
+            setSelectedEnricher(first?.enricher_type ?? null);
         }
     }, [request, selectedEnricher]);
 
-    const { data: enricherResults, isLoading: isEnricherLoading } = useQuery({
-        queryKey: queryKeys.enrichment.results.detail(`${id}-${selectedEnricher}`),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrichments/{enrichment_id}/enrichers/{enricher_type}/',
-                {
-                    params: {
-                        path: { enrichment_id: id, enricher_type: selectedEnricher! },
-                    },
-                },
-            );
-            if (error) throw { response, error };
-            return data;
+    const { data: enricherResults, isLoading: isEnricherLoading } = $api.useQuery(
+        'get',
+        '/intelio/enrichments/{enrichment_id}/enrichers/{enricher_type}/',
+        {
+            params: {
+                path: { enrichment_id: id, enricher_type: selectedEnricher! },
+            },
         },
-        enabled: !!selectedEnricher && !isShowingIgnored,
-        meta: {
-            showErrorToast: true,
+        {
+            enabled: !!selectedEnricher && !isShowingIgnored,
+            meta: {
+                showErrorToast: true,
+            },
         },
-    });
+    );
 
-    const { data: relationsPage, isLoading: isRelationsLoading } = useQuery({
-        queryKey: queryKeys.enrichment.results.relations({
-            id: String(id),
-            enricherType: selectedEnricher!,
-            entryId: activeArtifactId ?? undefined,
-            page,
-            pageSize,
-            search: appliedSearch,
-        }),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrichments/{enrichment_id}/enrichers/{enricher_type}/relations/',
-                {
-                    params: {
-                        path: {
-                            enrichment_id: id,
-                            enricher_type: selectedEnricher!,
-                        },
-                        query: {
-                            entry_id: activeArtifactId!,
-                            page,
-                            page_size: pageSize,
-                            ...(appliedSearch ? { search: appliedSearch } : {}),
-                        },
-                    },
+    const { data: relationsPage, isLoading: isRelationsLoading } = $api.useQuery(
+        'get',
+        '/intelio/enrichments/{enrichment_id}/enrichers/{enricher_type}/relations/',
+        {
+            params: {
+                path: {
+                    enrichment_id: id,
+                    enricher_type: selectedEnricher!,
                 },
-            );
-            if (error) throw { response, error };
-            return data;
+                query: {
+                    entry_id: activeArtifactId!,
+                    page,
+                    page_size: pageSize,
+                    ...(appliedSearch ? { search: appliedSearch } : {}),
+                },
+            },
         },
-        enabled: !!selectedEnricher && !isShowingIgnored && !!activeArtifactId,
-        meta: {
-            showErrorToast: true,
+        {
+            enabled: !!selectedEnricher && !isShowingIgnored && !!activeArtifactId,
+            meta: {
+                showErrorToast: true,
+            },
         },
-    });
+    );
 
     const results = useMemo(
         () => relationsPage?.results ?? [],
         [relationsPage?.results],
     );
-    const totalPages =
-        relationsPage?.total_pages ??
-        (relationsPage as { totalPages?: number })?.totalPages ??
-        1;
+    const totalPages = relationsPage?.total_pages ?? 1;
     const rows = useMemo(
         () => (enricherResults?.artifacts || []) as EnricherArtifact[],
         [enricherResults?.artifacts],
@@ -381,22 +360,15 @@ export default function EnrichmentResults() {
     );
 
     const enricherLabel =
-        request?.enrichers?.find(
-            (item: any) =>
-                (item.enricher_type ?? item.enricherType) === selectedEnricher,
-        )?.display_name ??
-        request?.enrichers?.find(
-            (item: any) =>
-                (item.enricher_type ?? item.enricherType) === selectedEnricher,
-        )?.displayName ??
-        selectedEnricher;
+        request?.enrichers?.find((item) => item.enricher_type === selectedEnricher)
+            ?.display_name ?? selectedEnricher;
 
     const expandedState = useMemo(
         () => expandedFor(rows, activeArtifactId),
         [rows, activeArtifactId],
     );
 
-    const columns = useMemo<ColumnDef<EnricherArtifact>[]>(
+    const columns = useMemo<DataTableColumnDef<EnricherArtifact>[]>(
         () => [
             {
                 id: 'select',
@@ -545,7 +517,8 @@ export default function EnrichmentResults() {
         [rows, activeArtifactId],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -554,14 +527,13 @@ export default function EnrichmentResults() {
         },
         onColumnVisibilityChange: setColumnVisibility,
         onExpandedChange: syncExpanded,
-        getCoreRowModel: getCoreRowModel(),
-        getExpandedRowModel: getExpandedRowModel(),
+        autoResetExpanded: false,
         getRowId: (row, index) => rowId(row, index),
         getRowCanExpand: () => true,
     });
 
-    // Only drives the pagination bar: the active artifact's relations render in its sub-row.
-    const relationsTable = useReactTable({
+    const relationsTable = useTable({
+        features: dataTableFeatures,
         data: results,
         columns: [],
         state: { pagination: { pageIndex: page - 1, pageSize } },
@@ -575,14 +547,13 @@ export default function EnrichmentResults() {
                 setPage(next.pageIndex + 1);
             }
         },
-        getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
         pageCount: totalPages,
         rowCount: relationsPage?.count,
     });
 
     const subRow = useCallback(
-        (row: Row<EnricherArtifact>) => {
+        (row: DataTableRow<EnricherArtifact>) => {
             const aid = normalizeId(row.original.id);
             const isSelected = aid === activeArtifactId;
             return (
@@ -683,20 +654,18 @@ export default function EnrichmentResults() {
 
     const statusDetail = () => {
         const msgs: string[] = [];
-        if (request?.ignored && request.ignored.length > 0) {
+        if (Array.isArray(request?.ignored) && request.ignored.length > 0) {
             msgs.push(
                 `Ignored ${request.ignored.length} artifact${request.ignored.length > 1 ? 's' : ''}`,
             );
         }
         const warn_count =
-            request?.enrichers?.filter((item: any) => item.status === 'warning')
-                .length || 0;
+            request?.enrichers?.filter((item) => item.status === 'warning').length || 0;
         if (warn_count > 0) {
             msgs.push(`Warnings in ${warn_count} enricher${warn_count > 1 ? 's' : ''}`);
         }
         const error_count =
-            request?.enrichers?.filter((item: any) => item.status === 'error').length ||
-            0;
+            request?.enrichers?.filter((item) => item.status === 'error').length || 0;
         if (error_count > 0) {
             msgs.push(`Errors in ${error_count} enricher${error_count > 1 ? 's' : ''}`);
         }
@@ -705,13 +674,13 @@ export default function EnrichmentResults() {
     };
 
     const hasWarnings =
-        !!(enricherResults as any)?.warnings &&
-        (enricherResults as any).warnings.length > 0;
-    const hasErrors =
-        !!(enricherResults as any)?.errors &&
-        (enricherResults as any).errors.length > 0;
+        !!enricherResults?.warnings && enricherResults.warnings.length > 0;
+    const hasErrors = !!enricherResults?.errors && enricherResults.errors.length > 0;
 
-    const ignoredArtifacts = useMemo(() => request?.ignored ?? [], [request?.ignored]);
+    const ignoredArtifacts = useMemo(
+        () => (Array.isArray(request?.ignored) ? request.ignored : []),
+        [request?.ignored],
+    );
 
     const ignoredRows = useMemo(
         () =>
@@ -722,7 +691,9 @@ export default function EnrichmentResults() {
         [ignoredArtifacts],
     );
 
-    const ignoredColumns = useMemo<ColumnDef<{ key: string; artifact: any }>[]>(
+    const ignoredColumns = useMemo<
+        DataTableColumnDef<{ key: string; artifact: any }>[]
+    >(
         () => [
             {
                 id: 'artifact',
@@ -749,10 +720,10 @@ export default function EnrichmentResults() {
         [],
     );
 
-    const ignoredTable = useReactTable({
+    const ignoredTable = useTable({
+        features: dataTableFeatures,
         data: ignoredRows,
         columns: ignoredColumns,
-        getCoreRowModel: getCoreRowModel(),
         getRowId: (r) => r.key,
     });
 
@@ -784,27 +755,23 @@ export default function EnrichmentResults() {
                                 <TooltipContent>{statusDetail()}</TooltipContent>
                             </Tooltip>
                         )}
-                        {(request.created_at ?? request.createdAt) && (
+                        {request.created_at && (
                             <div className='flex items-center gap-1.5'>
                                 <CalendarIcon size={14} weight='bold' />
                                 <span>
                                     {format(
-                                        new Date(
-                                            request.created_at ?? request.createdAt,
-                                        ),
+                                        new Date(request.created_at),
                                         'dd/MM/yyyy, HH:mm',
                                     )}
                                 </span>
                             </div>
                         )}
-                        {(request.completed_at ?? request.completedAt) && (
+                        {request.completed_at && (
                             <div className='flex items-center gap-1.5'>
                                 <ClockIcon size={14} weight='bold' />
                                 <span>
                                     {format(
-                                        new Date(
-                                            request.completed_at ?? request.completedAt,
-                                        ),
+                                        new Date(request.completed_at),
                                         'dd/MM/yyyy, HH:mm',
                                     )}
                                 </span>
@@ -827,10 +794,7 @@ export default function EnrichmentResults() {
                                             const first = request.enrichers?.[0];
                                             if (first) {
                                                 selectEnricher(
-                                                    String(
-                                                        first.enricher_type ??
-                                                            first.enricherType,
-                                                    ),
+                                                    String(first.enricher_type),
                                                 );
                                             }
                                         }}
@@ -980,8 +944,8 @@ export default function EnrichmentResults() {
                                     <Card className='border-border bg-muted/5'>
                                         <CardContent className='p-0'>
                                             <div className='divide-y divide-border'>
-                                                {(enricherResults as any)!.warnings!.map(
-                                                    (warning: any, index: number) => (
+                                                {enricherResults!.warnings!.map(
+                                                    (warning, index) => (
                                                         <div
                                                             key={index}
                                                             className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
@@ -1016,8 +980,8 @@ export default function EnrichmentResults() {
                                     <Card className='border-border bg-muted/5'>
                                         <CardContent className='p-0'>
                                             <div className='divide-y divide-border'>
-                                                {(enricherResults as any)!.errors!.map(
-                                                    (error: any, index: number) => (
+                                                {enricherResults!.errors!.map(
+                                                    (error, index) => (
                                                         <div
                                                             key={index}
                                                             className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'

@@ -16,13 +16,14 @@ import {
     FREE_TEXT_SCHEMA,
     type SearchState,
 } from '@/lib/search-query/search-schema';
-import { fetchClient } from '@services/openapi/client';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import EnrichmentSettingsForm from './enrichment-settings-form';
 
-type EnricherItem = { class_name: string; name: string };
+type EnricherItem = components['schemas']['EnrichmentSubclass'];
 
 export default function ManageEnrichmentList() {
     useDockPanelTab({ title: 'Manage: Enrichment', icon: 'manage-enrichment' });
@@ -36,26 +37,17 @@ export default function ManageEnrichmentList() {
     const [searchState, setSearchState] = useState<SearchState>(EMPTY_SEARCH_STATE);
     const applied = searchState.q ?? '';
 
-    const { data: enrichers = [], isPending } = useQuery({
-        queryKey: ['enrichmentTypes', applied],
-        queryFn: async () => {
-            const listQuery = {
-                ...(applied ? { search: applied } : {}),
-            };
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrichers/',
-                {
-                    params: { query: listQuery },
-                },
-            );
-            if (error) throw { response, error };
-            return data;
+    const { data: enrichers = [], isPending } = $api.useQuery(
+        'get',
+        '/intelio/enrichers/',
+        { params: { query: applied ? { search: applied } : {} } },
+        {
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
-        },
-    });
+    );
 
     const tab: string | undefined =
         (search.tab as string | undefined) ??

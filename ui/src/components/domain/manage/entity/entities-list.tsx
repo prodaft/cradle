@@ -38,22 +38,18 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import { FREE_TEXT_SCHEMA, type SearchState } from '@/lib/search-query/search-schema';
 import {
     ClockCounterClockwiseIcon,
     PencilIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import {
-    type ColumnDef,
-    type RowSelectionState,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { type RowSelectionState, useTable } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -91,11 +87,6 @@ export default function EntitiesList() {
     }, []);
 
     const trimmed = applied.trim();
-    const listFilters = {
-        page,
-        pageSize,
-        ...(trimmed ? { search: trimmed } : {}),
-    };
     const listQuery = useMemo(
         () => ({
             type: 'entity' as const,
@@ -105,20 +96,19 @@ export default function EntitiesList() {
         }),
         [page, pageSize, trimmed],
     );
-    const { data: entitiesPage, isPending } = useQuery({
-        queryKey: queryKeys.entities.list(listFilters),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET('/query/', {
-                params: { query: listQuery },
-            });
-            if (error) throw { response, error };
-            return data;
+    const { data: entitiesPage, isPending } = $api.useQuery(
+        'get',
+        '/query/',
+        {
+            params: { query: listQuery },
         },
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+        {
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-    });
+    );
 
     const rows = (entitiesPage?.results ?? []) as EntityRow[];
 
@@ -213,7 +203,7 @@ export default function EntitiesList() {
         [page, pageSize, search, router, location.pathname],
     );
 
-    const columns = useMemo<ColumnDef<EntityRow>[]>(
+    const columns = useMemo<DataTableColumnDef<EntityRow>[]>(
         () => [
             {
                 id: 'select',
@@ -345,7 +335,8 @@ export default function EntitiesList() {
         [isAdmin, openSettings, confirmDelete],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -365,7 +356,6 @@ export default function EntitiesList() {
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
         enableSorting: false,
         enableRowSelection: true,
         manualPagination: true,

@@ -6,19 +6,17 @@ import { DataTableViewOptions } from '@/components/custom/data-table/data-table-
 import OfflineIndicator from '@/components/feedback/offline-indicator';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    dataTableFeatures,
+    type DataTableColumnDef,
+    type DataTableRow,
+} from '@/lib/data-table';
 import { EMPTY_SEARCH_STATE, type SearchState } from '@/lib/search-query/search-schema';
 import { CaretDownIcon, GitForkIcon } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import type { operations } from '@services/openapi/schema';
 import { useParams } from '@tanstack/react-router';
-import {
-    type ColumnDef,
-    type ExpandedState,
-    type Row,
-    getCoreRowModel,
-    getExpandedRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { useTable, type ExpandedState } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -297,34 +295,37 @@ export default function ActivityList({
     const rows = useMemo(() => {
         if (!logsPage?.results) return [];
 
-        return logsPage.results.map((log: any): ActivityEvent => ({
-            id: log.id || '',
-            createdAt:
-                typeof log.created_at === 'string'
-                    ? log.created_at
-                    : new Date().toISOString(),
-            type: log.type,
-            username: log.user?.username || 'unknown',
-            contentType: log.content_type || 'unknown',
-            objectId: log.object_id || '',
-            repr: log.object_repr || '',
-            details: log.details || undefined,
-            srcLog: log.src_log
-                ? {
-                      id: log.src_log.id,
-                      type: log.src_log.type,
-                      details: log.src_log.details,
-                      content_type: log.src_log.content_type,
-                      object_id: log.src_log.object_id,
-                      object_repr: log.src_log.object_repr,
-                  }
-                : undefined,
-        }));
+        return logsPage.results.map((log): ActivityEvent => {
+            const srcLog = log.src_log as SrcLog | null | undefined;
+            return {
+                id: log.id || '',
+                createdAt:
+                    typeof log.created_at === 'string'
+                        ? log.created_at
+                        : new Date().toISOString(),
+                type: log.type,
+                username: log.user?.username || 'unknown',
+                contentType: log.content_type || 'unknown',
+                objectId: log.object_id || '',
+                repr: log.object_repr || '',
+                details: log.details || undefined,
+                srcLog: srcLog
+                    ? {
+                          id: srcLog.id,
+                          type: srcLog.type,
+                          details: srcLog.details,
+                          content_type: srcLog.content_type,
+                          object_id: srcLog.object_id,
+                          object_repr: srcLog.object_repr,
+                      }
+                    : undefined,
+            };
+        });
     }, [logsPage?.results]);
 
     const totalPages = logsPage?.total_pages || 1;
 
-    const columns = useMemo<ColumnDef<ActivityEvent>[]>(
+    const columns = useMemo<DataTableColumnDef<ActivityEvent>[]>(
         () => [
             {
                 accessorKey: 'type',
@@ -381,7 +382,7 @@ export default function ActivityList({
                               );
                           },
                           enableSorting: false,
-                      } satisfies ColumnDef<ActivityEvent>,
+                      } satisfies DataTableColumnDef<ActivityEvent>,
                   ]
                 : []),
             {
@@ -481,7 +482,8 @@ export default function ActivityList({
         [page, pageSize],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -492,13 +494,12 @@ export default function ActivityList({
             },
         },
         onExpandedChange: setExpanded,
+        autoResetExpanded: false,
         onPaginationChange: (updater) => {
             const current = { pageIndex: page - 1, pageSize };
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
-        getExpandedRowModel: getExpandedRowModel(),
         getRowCanExpand: (row) => !!(row.original.details || row.original.srcLog),
         getRowId: (row) => row.id,
         manualPagination: true,
@@ -511,12 +512,12 @@ export default function ActivityList({
         setPage(1);
     }, []);
 
-    const toggleRow = useCallback((row: Row<ActivityEvent>) => {
+    const toggleRow = useCallback((row: DataTableRow<ActivityEvent>) => {
         if (row.getCanExpand()) row.toggleExpanded();
     }, []);
 
     const renderSubRow = useCallback(
-        (row: Row<ActivityEvent>) => <ExpandedRowDetail item={row.original} />,
+        (row: DataTableRow<ActivityEvent>) => <ExpandedRowDetail item={row.original} />,
         [],
     );
 

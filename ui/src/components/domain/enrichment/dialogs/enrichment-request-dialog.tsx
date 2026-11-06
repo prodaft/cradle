@@ -25,10 +25,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { queryKeys, useNdjsonQuery } from '@/hooks/query';
-import { fetchClient } from '@services/openapi/client';
+import { invalidate, queryKeys, useNdjsonQuery } from '@/hooks/query';
+import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
@@ -135,21 +135,19 @@ export default function EnrichmentRequestDialog({
         artifactInput: '',
     });
 
-    const { data: enrichers, isLoading } = useQuery({
-        queryKey: ['enrichment', 'subclasses'],
-        queryFn: async () => {
-            const { data, error, response } =
-                await fetchClient.GET('/intelio/enrichers/');
-            if (error) throw { response, error };
-            return data;
+    const { data: enrichers, isLoading } = $api.useQuery(
+        'get',
+        '/intelio/enrichers/',
+        undefined,
+        {
+            enabled: open,
+            meta: {
+                showErrorToast: true,
+            },
         },
-        enabled: open,
-        meta: {
-            showErrorToast: true,
-        },
-    });
+    );
 
-    const enricherTypes: Option[] = ((enrichers ?? []) as any[])
+    const enricherTypes: Option[] = (enrichers ?? [])
         .filter((enricher) => enricher.enabled)
         .map((enricher) => ({
             value: enricher.class_name,
@@ -197,7 +195,6 @@ export default function EnrichmentRequestDialog({
 
     const { data: allEntities } = useNdjsonQuery({
         path: '/entries/entities/stream/',
-        queryKey: queryKeys.entities.list(),
         enabled: open,
         meta: {
             showErrorToast: true,
@@ -355,14 +352,14 @@ export default function EnrichmentRequestDialog({
                         ...(payload.artifact ? { artifact: payload.artifact } : {}),
                         entity_ids: payload.entities,
                         note_ids: payload.notes,
-                    } as any,
+                    },
                 },
             );
             if (error) throw { response, error };
             return data;
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
+            invalidateQueries: invalidate(queryKeys.enrichment.requests.lists()),
             successMessage: 'Enrichment request created successfully',
         },
     });

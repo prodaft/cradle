@@ -111,3 +111,12 @@ class SystemSettings:
 
 
 system_settings = SystemSettings()
+
+
+def settings_sections() -> list[BaseSettingsSection]:
+    """Return every settings section registered on ``system_settings``."""
+    return [
+        section
+        for name in dir(system_settings)
+        if not name.startswith("_") and isinstance(section := getattr(system_settings, name), BaseSettingsSection)
+    ]

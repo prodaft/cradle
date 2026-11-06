@@ -29,7 +29,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field
 import { Input } from '@/components/ui/input';
 import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
 import { formatFileSize, uploadFile } from '@/utils/files';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -38,8 +38,8 @@ import {
     UploadSimpleIcon,
     XIcon,
 } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -95,27 +95,24 @@ export default function UploadDigestDialog({
     onUpload,
     dataTypeOptions: propDataTypeOptions,
 }: UploadDigestDialogProps): React.JSX.Element {
-    const { data: digestTypes } = useQuery({
-        queryKey: [...queryKeys.digests.all, 'options'],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/digest-types/',
-            );
-            if (error) throw { response, error };
-            return data;
+    const { data: digestTypes } = $api.useQuery(
+        'get',
+        '/intelio/digest-types/',
+        undefined,
+        {
+            meta: {
+                showErrorToast: true,
+            },
+            enabled: open && (!propDataTypeOptions || propDataTypeOptions.length === 0),
         },
-        meta: {
-            showErrorToast: true,
-        },
-        enabled: open && (!propDataTypeOptions || propDataTypeOptions.length === 0),
-    });
+    );
 
     const dataTypeOptions = React.useMemo(() => {
         if (propDataTypeOptions && propDataTypeOptions.length > 0) {
             return propDataTypeOptions;
         }
         if (!digestTypes) return [];
-        return (digestTypes as any[]).map((type: any) => ({
+        return digestTypes.map((type) => ({
             value: type.class_name,
             label: type.name,
             inferEntities: type.infer_entities,
@@ -151,14 +148,10 @@ export default function UploadDigestDialog({
             });
             if (initError) throw { response: initResponse, error: initError };
 
-            const initPayload = init as {
-                presigned_url: string;
-                upload_id: string;
-            };
-            await uploadFile(initPayload.presigned_url, file);
+            await uploadFile(init.presigned_url, file);
 
             const entities = (values.associatedEntry || []).map((e) => e.value);
-            const uploadId = initPayload.upload_id;
+            const uploadId = init.upload_id;
 
             const { data, error, response } = await fetchClient.POST(
                 '/intelio/digests/uploads/{upload_id}/finalize/',
@@ -168,14 +161,14 @@ export default function UploadDigestDialog({
                         title: values.title,
                         digest_type: values.dataType!.value,
                         entity_ids: entities.length > 0 ? entities : undefined,
-                    } as any,
+                    },
                 },
             );
             if (error) throw { response, error };
             return data;
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.digests.lists() }],
+            invalidateQueries: invalidate(queryKeys.digests.lists()),
             successMessage: 'File uploaded successfully',
         },
     });
@@ -493,24 +486,19 @@ export default function UploadDigestDialog({
                                                             {
                                                                 params: {
                                                                     query: {
-                                                                        name: query,
+                                                                        name: [query],
                                                                         type: 'entity',
                                                                     },
                                                                 },
                                                             },
                                                         );
                                                     if (error) return [];
-                                                    const results = (data as any)
-                                                        ?.results;
+                                                    const results = data?.results;
                                                     if (results) {
-                                                        return results.map(
-                                                            (entry: any) => ({
-                                                                value: String(
-                                                                    entry.id!,
-                                                                ),
-                                                                label: `${entry.subtype}:${entry.name}`,
-                                                            }),
-                                                        ) as unknown as Option[];
+                                                        return results.map((entry) => ({
+                                                            value: String(entry.id!),
+                                                            label: `${entry.subtype}:${entry.name}`,
+                                                        }));
                                                     }
                                                     return [];
                                                 }}

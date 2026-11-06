@@ -6,6 +6,7 @@ import { logger } from '@/utils/logger';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
+import { graphColors } from './graph-colors';
 import { Node } from './graph-filter-utils';
 
 type EdgeRelation = components['schemas']['EdgeRelation'];
@@ -61,7 +62,10 @@ export default function NoteGraphSearch(
             lastAppliedFetchAtRef.current = dataUpdatedAt;
 
             try {
-                const { entries, relations, colors } = data;
+                const { entries, relations } = data;
+                const colors = graphColors(
+                    (data.colors ?? {}) as Record<string, string>,
+                );
 
                 let nodes: Node[] = [];
                 let hasGraphData = false;
@@ -84,11 +88,10 @@ export default function NoteGraphSearch(
                                     degree: e.degree,
                                     type: e.type || e.subtype,
                                     subtype: e.subtype,
+                                    name: e.name,
+                                    noteId: e.note_id ?? undefined,
                                     label,
-                                    color:
-                                        typeof colors?.[e.subtype] === 'string'
-                                            ? (colors?.[e.subtype] as string)
-                                            : 'var(--color-primary)',
+                                    color: colors[e.subtype] || 'var(--color-primary)',
                                     location: e.location,
                                 });
                             }
@@ -102,7 +105,7 @@ export default function NoteGraphSearch(
 
                 const edges: EdgeRelation[] =
                     relations && Array.isArray(relations) && relations.length > 0
-                        ? (relations as unknown as EdgeRelation[])
+                        ? relations
                         : [];
                 if (edges.length > 0) {
                     hasGraphData = true;

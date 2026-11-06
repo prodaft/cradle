@@ -11,13 +11,14 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
+import { apiKey } from '@/hooks/query';
 import {
     EMPTY_SEARCH_STATE,
     FREE_TEXT_SCHEMA,
     type SearchState,
 } from '@/lib/search-query/search-schema';
-import { fetchClient } from '@services/openapi/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import startCase from 'lodash/startCase';
 import { useState } from 'react';
@@ -42,26 +43,17 @@ export default function TypeMappingsList() {
     const applied = searchState.q ?? '';
     const queryClient = useQueryClient();
 
-    const { data: mappings = [], isPending } = useQuery({
-        queryKey: ['typeMappings', applied],
-        queryFn: async () => {
-            const listQuery = {
-                ...(applied ? { search: applied } : {}),
-            };
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/mappings/',
-                {
-                    params: { query: listQuery },
-                },
-            );
-            if (error) throw { response, error };
-            return data;
+    const { data: mappings = [], isPending } = $api.useQuery(
+        'get',
+        '/intelio/mappings/',
+        { params: { query: applied ? { search: applied } : {} } },
+        {
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
-        },
-    });
+    );
 
     const tab: string | undefined =
         (search.tab as string | undefined) ??
@@ -137,7 +129,7 @@ export default function TypeMappingsList() {
                             name={activeMapping.name || tab!}
                             onSave={() => {
                                 queryClient.invalidateQueries({
-                                    queryKey: ['typeMappings'],
+                                    queryKey: apiKey('/intelio/mappings/'),
                                 });
                             }}
                         />

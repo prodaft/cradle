@@ -5,12 +5,13 @@ import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import { createDashboardLink, FILE_DASHBOARD_SUBTYPE } from '@/utils/dashboard';
 import { DownloadSimpleIcon } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useParams, useRouter, useSearch } from '@tanstack/react-router';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useTable } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { format } from 'date-fns';
 import { FileText, Share2 } from 'lucide-react';
@@ -29,7 +30,7 @@ const FILE_DASHBOARD_TABS = [
 
 const EMPTY_ENTRIES: LinkedEntry[] = [];
 
-const LINKED_ENTRY_COLUMNS: ColumnDef<LinkedEntry>[] = [
+const LINKED_ENTRY_COLUMNS: DataTableColumnDef<LinkedEntry>[] = [
     {
         accessorKey: 'subtype',
         id: 'type',
@@ -112,13 +113,13 @@ export default function FileDashboard() {
         { enabled: !!file?.id && tab === 'entries' },
     );
 
-    const entriesTable = useReactTable({
+    const entriesTable = useTable({
+        features: dataTableFeatures,
         data: entriesPage?.results ?? EMPTY_ENTRIES,
         columns: LINKED_ENTRY_COLUMNS,
         state: { pagination: entriesPagination },
         onPaginationChange: setEntriesPagination,
         getRowId: (row, index) => String(row.id ?? index),
-        getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
         pageCount: Math.max(1, entriesPage?.total_pages ?? 1),
         rowCount: entriesPage?.count,

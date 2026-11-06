@@ -56,26 +56,17 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
     const { data: authConfig } = $api.useQuery('get', '/auth/config/', undefined, {
         enabled: !!basePath,
         meta: { suppressNotification: true },
-        select: (raw) => {
-            const config = raw as Record<string, unknown>;
-            const oauthMethods =
-                (config.oauthMethods as unknown[]) ??
-                (config.oauth_methods as unknown[]) ??
-                [];
-            return {
-                oauthMethods: (Array.isArray(oauthMethods)
-                    ? oauthMethods
-                    : []) as OAuthMethod[],
-            };
-        },
+        select: (config) => ({
+            oauthMethods: config.oauth_methods as OAuthMethod[],
+        }),
     });
 
     useEffect(() => {
         if (userData) {
-            const serverConnections =
-                (userData as any).oauthConnections ||
-                (userData as any).oauth_connections ||
-                {};
+            const serverConnections = (userData.oauth_connections ?? {}) as Record<
+                string,
+                boolean
+            >;
             setOauthConnections(serverConnections);
         }
     }, [userData]);

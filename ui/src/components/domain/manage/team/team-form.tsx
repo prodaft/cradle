@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuthState } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
@@ -72,7 +72,7 @@ export default function TeamForm({ team }: TeamFormProps) {
         },
         meta: {
             successMessage: 'Team updated successfully',
-            invalidateQueries: [{ queryKey: queryKeys.teams.all }],
+            invalidateQueries: invalidate(...queryKeys.teams.all()),
         },
         onSuccess: (saved) =>
             reset({ name: saved.name, description: saved.description ?? '' }),
@@ -87,12 +87,11 @@ export default function TeamForm({ team }: TeamFormProps) {
         },
         meta: {
             successMessage: 'Team deleted',
-            // Deleting a team drops its grants and clears ownership of its entities.
             invalidateQueries: [
-                { queryKey: queryKeys.teams.all },
-                { queryKey: ['get', '/entries/entities/{entity_id}/access/users/'] },
-                { queryKey: ['get', '/users/{user_id}/access/'] },
-                { queryKey: ['get', '/entries/entities/{entity_id}/'] },
+                ...invalidate(...queryKeys.teams.all()),
+                { queryKey: queryKeys.access.entityUsers() },
+                { queryKey: queryKeys.access.users() },
+                { queryKey: queryKeys.entities.details() },
             ],
         },
         onSuccess: () => router.navigate({ to: '/manage/teams' as any }),

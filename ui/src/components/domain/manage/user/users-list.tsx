@@ -38,6 +38,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import type { SearchSchema, SearchState } from '@/lib/search-query/search-schema';
 import { roleBadgeVariant, USER_ROLE_LABELS, USER_ROLE_OPTIONS } from '@/utils/auth';
 import {
@@ -51,12 +52,7 @@ import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import {
-    type ColumnDef,
-    type RowSelectionState,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { type RowSelectionState, useTable } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import AddUserForm from './add-user-form';
@@ -230,7 +226,7 @@ export default function UsersList() {
         [page, pageSize, search, router, location.pathname],
     );
 
-    const columns = useMemo<ColumnDef<UserRow>[]>(
+    const columns = useMemo<DataTableColumnDef<UserRow>[]>(
         () => [
             {
                 id: 'select',
@@ -368,7 +364,8 @@ export default function UsersList() {
         [openSettings, confirmDelete, selfId],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -388,7 +385,6 @@ export default function UsersList() {
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         enableSorting: false,
         manualPagination: true,

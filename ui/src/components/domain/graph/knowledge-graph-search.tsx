@@ -8,6 +8,7 @@ import { WarningCircleIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
+import { graphColors } from './graph-colors';
 import { Node } from './graph-filter-utils';
 
 type EdgeRelation = components['schemas']['EdgeRelation'];
@@ -39,7 +40,7 @@ export default function KnowledgeGraphSearch({
     const lastAppliedFetchAtRef = useRef<number>(0);
 
     const { data, isLoading, dataUpdatedAt } = useQuery({
-        queryKey: [...queryKeys.knowledgeGraph.all, 'full'],
+        queryKey: queryKeys.knowledgeGraph.full(),
         queryFn: async () => {
             const {
                 data: payload,
@@ -56,7 +57,7 @@ export default function KnowledgeGraphSearch({
 
             const entries = graph.entries;
             const relations = graph.relations;
-            const colors = (graph.colors ?? {}) as Record<string, string>;
+            const colors = graphColors((graph.colors ?? {}) as Record<string, string>);
             let nodes: Node[] = [];
 
             try {
@@ -75,6 +76,8 @@ export default function KnowledgeGraphSearch({
                             degree: e.degree,
                             type: e.type || e.subtype,
                             subtype: e.subtype,
+                            name: e.name,
+                            noteId: e.note_id ?? undefined,
                             label,
                             color: colors?.[e.subtype] || 'var(--color-primary)',
                             location: e.location,
@@ -87,9 +90,7 @@ export default function KnowledgeGraphSearch({
             }
 
             const edges: EdgeRelation[] =
-                Array.isArray(relations) && relations.length > 0
-                    ? (relations as unknown as EdgeRelation[])
-                    : [];
+                Array.isArray(relations) && relations.length > 0 ? relations : [];
 
             return { nodes, edges, colors };
         },

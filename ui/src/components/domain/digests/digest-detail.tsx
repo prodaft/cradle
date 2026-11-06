@@ -10,6 +10,11 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cradleJsonTheme } from '@/config/json-view';
 import { queryKeys } from '@/hooks/query';
 import {
+    type DataTableColumnDef,
+    dataTableFeatures,
+    type DataTableRow,
+} from '@/lib/data-table';
+import {
     EMPTY_SEARCH_STATE,
     FREE_TEXT_SCHEMA,
     type SearchState,
@@ -22,19 +27,11 @@ import {
     WarningCircleIcon,
     WarningIcon,
 } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from '@tanstack/react-router';
-import {
-    getCoreRowModel,
-    getExpandedRowModel,
-    useReactTable,
-    type ColumnDef,
-    type PaginationState,
-    type Row,
-    type Updater,
-} from '@tanstack/react-table';
+import { type PaginationState, type Updater, useTable } from '@tanstack/react-table';
 import JsonView from '@uiw/react-json-view';
 import { format } from 'date-fns';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -169,105 +166,82 @@ export default function DigestDetail() {
         data: digest,
         isLoading,
         isError,
-    } = useQuery({
-        queryKey: queryKeys.digests.detail(id),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/digests/{digest_id}/',
-                { params: { path: { digest_id: id } } },
-            );
-            if (error) throw { response, error };
-            return data;
+    } = $api.useQuery(
+        'get',
+        '/intelio/digests/{digest_id}/',
+        { params: { path: { digest_id: id } } },
+        {
+            enabled: !!id,
+            retry: false,
+            refetchInterval: (query) =>
+                query.state.data?.status === 'working' ? WORKING_REFETCH_MS : false,
+            meta: {
+                showErrorToast: false,
+            },
         },
-        enabled: !!id,
-        retry: false,
-        refetchInterval: (query) =>
-            query.state.data?.status === 'working' ? WORKING_REFETCH_MS : false,
-        meta: {
-            showErrorToast: false,
-        },
-    });
+    );
     const isWorking = digest?.status === 'working';
 
-    // Polling stops with the digest's status, so load what was imported after the last poll.
     const previousStatus = useRef(digest?.status);
     useEffect(() => {
         if (previousStatus.current === 'working' && digest?.status !== 'working') {
             queryClient.invalidateQueries({
-                queryKey: [...queryKeys.digests.all, 'relations'],
+                queryKey: queryKeys.digests.relations(),
             });
             queryClient.invalidateQueries({
-                queryKey: [...queryKeys.digests.all, 'notes'],
+                queryKey: queryKeys.digests.notes(),
             });
         }
         previousStatus.current = digest?.status;
     }, [digest?.status, queryClient]);
 
     const relationsSearch = relationsPaging.applied.q;
-    const { data: relationsPage, isFetching: isRelationsFetching } = useQuery({
-        queryKey: queryKeys.digests.relations({
-            id,
-            page: relationsPaging.page,
-            pageSize: relationsPaging.pageSize,
-            search: relationsSearch,
-        }),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/digests/{digest_id}/relations/',
-                {
-                    params: {
-                        path: { digest_id: id },
-                        query: {
-                            page: relationsPaging.page,
-                            page_size: relationsPaging.pageSize,
-                            ...(relationsSearch ? { search: relationsSearch } : {}),
-                        },
-                    },
+    const { data: relationsPage, isFetching: isRelationsFetching } = $api.useQuery(
+        'get',
+        '/intelio/digests/{digest_id}/relations/',
+        {
+            params: {
+                path: { digest_id: id },
+                query: {
+                    page: relationsPaging.page,
+                    page_size: relationsPaging.pageSize,
+                    ...(relationsSearch ? { search: relationsSearch } : {}),
                 },
-            );
-            if (error) throw { response, error };
-            return data;
+            },
         },
-        enabled: !!digest,
-        placeholderData: keepPreviousData,
-        refetchInterval: isWorking ? WORKING_REFETCH_MS : false,
-        meta: {
-            showErrorToast: true,
+        {
+            enabled: !!digest,
+            placeholderData: keepPreviousData,
+            refetchInterval: isWorking ? WORKING_REFETCH_MS : false,
+            meta: {
+                showErrorToast: true,
+            },
         },
-    });
+    );
 
     const notesSearch = notesPaging.applied.q;
-    const { data: notesPage, isFetching: isNotesFetching } = useQuery({
-        queryKey: queryKeys.digests.notes({
-            id,
-            page: notesPaging.page,
-            pageSize: notesPaging.pageSize,
-            search: notesSearch,
-        }),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/digests/{digest_id}/notes/',
-                {
-                    params: {
-                        path: { digest_id: id },
-                        query: {
-                            page: notesPaging.page,
-                            page_size: notesPaging.pageSize,
-                            ...(notesSearch ? { search: notesSearch } : {}),
-                        },
-                    },
+    const { data: notesPage, isFetching: isNotesFetching } = $api.useQuery(
+        'get',
+        '/intelio/digests/{digest_id}/notes/',
+        {
+            params: {
+                path: { digest_id: id },
+                query: {
+                    page: notesPaging.page,
+                    page_size: notesPaging.pageSize,
+                    ...(notesSearch ? { search: notesSearch } : {}),
                 },
-            );
-            if (error) throw { response, error };
-            return data;
+            },
         },
-        enabled: !!digest,
-        placeholderData: keepPreviousData,
-        refetchInterval: isWorking ? WORKING_REFETCH_MS : false,
-        meta: {
-            showErrorToast: true,
+        {
+            enabled: !!digest,
+            placeholderData: keepPreviousData,
+            refetchInterval: isWorking ? WORKING_REFETCH_MS : false,
+            meta: {
+                showErrorToast: true,
+            },
         },
-    });
+    );
 
     const warnings = useMemo(() => (digest?.warnings as unknown[]) ?? [], [digest]);
     const errors = useMemo(() => (digest?.errors as unknown[]) ?? [], [digest]);
@@ -285,7 +259,6 @@ export default function DigestDetail() {
     const relationsCount = relationsPage?.count;
     const notesCount = notesPage?.count;
 
-    // Open the first tab that has something in it once the counts are known.
     useEffect(() => {
         if (tab !== null || relationsCount === undefined || notesCount === undefined) {
             return;
@@ -310,7 +283,7 @@ export default function DigestDetail() {
         icon: isError ? 'not-found' : 'digest-data',
     });
 
-    const relationColumns = useMemo<ColumnDef<DigestRelation>[]>(
+    const relationColumns = useMemo<DataTableColumnDef<DigestRelation>[]>(
         () => [
             {
                 id: 'src',
@@ -340,14 +313,14 @@ export default function DigestDetail() {
         [],
     );
 
-    const relationsTable = useReactTable({
+    const relationsTable = useTable({
+        features: dataTableFeatures,
         data: relationsPage?.results ?? [],
         columns: relationColumns,
-        getCoreRowModel: getCoreRowModel(),
-        getExpandedRowModel: getExpandedRowModel(),
         getRowId: (row, index) => row.id ?? String(index),
         getRowCanExpand: (row) =>
             !!row.original.details && Object.keys(row.original.details).length > 0,
+        autoResetExpanded: false,
         state: { pagination: relationsPaging.pagination },
         onPaginationChange: relationsPaging.onPaginationChange,
         manualPagination: true,
@@ -356,7 +329,7 @@ export default function DigestDetail() {
     });
 
     const relationDetails = useCallback(
-        (row: Row<DigestRelation>) => (
+        (row: DataTableRow<DigestRelation>) => (
             <div className='bg-muted/30 border-t px-4 py-3'>
                 <JsonView
                     value={row.original.details as object}
@@ -375,7 +348,7 @@ export default function DigestDetail() {
         [],
     );
 
-    const noteColumns = useMemo<ColumnDef<DigestNote>[]>(
+    const noteColumns = useMemo<DataTableColumnDef<DigestNote>[]>(
         () => [
             {
                 id: 'title',
@@ -424,10 +397,10 @@ export default function DigestDetail() {
         [],
     );
 
-    const notesTable = useReactTable({
+    const notesTable = useTable({
+        features: dataTableFeatures,
         data: notesPage?.results ?? [],
         columns: noteColumns,
-        getCoreRowModel: getCoreRowModel(),
         getRowId: (row, index) => row.id ?? String(index),
         state: { pagination: notesPaging.pagination },
         onPaginationChange: notesPaging.onPaginationChange,

@@ -69,7 +69,7 @@ class LspTypes(APIView):
             ),
             OpenApiParameter(
                 name="type",
-                description="Entry type to filter by",
+                description="Entry class subtype to filter by",
                 required=False,
                 type=str,
             ),

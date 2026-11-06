@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from core.ndjson import ndjson_streaming_response
+from core.ndjson import NDJSON_MEDIA_TYPE, ndjson_streaming_response
 from core.openapi import get_common_error_responses, get_error_responses
 from user.authentication import CookieJWTAuthentication
 from user.permissions import EntityListPermission, EntryClassListPermission
@@ -26,8 +26,9 @@ from ..serializers import EntryClassSerializer, EntryClassSerializerCount, Entry
             "Same permission rules as the paginated list; uses a single chunked HTTP response."
         ),
         responses={
-            200: OpenApiResponse(
-                description="``application/x-ndjson`` body: one JSON object per line (same shape as list items)."
+            (200, NDJSON_MEDIA_TYPE): OpenApiResponse(
+                response=EntryResponseSerializer,
+                description="``application/x-ndjson`` body: one entity per line (schema is a single line).",
             ),
             **get_common_error_responses(),
         },
@@ -77,8 +78,12 @@ class EntityListStreamView(APIView):
             ),
         ],
         responses={
-            200: OpenApiResponse(
-                description="``application/x-ndjson`` body: one JSON object per line (same shape as list items)."
+            (200, NDJSON_MEDIA_TYPE): OpenApiResponse(
+                response=EntryClassSerializerCount,
+                description=(
+                    "``application/x-ndjson`` body: one entry class per line (schema is a single line). "
+                    "``count`` is only present when ``show_count`` is true."
+                ),
             ),
             **get_error_responses(
                 EntriesErrorCodes.ADMIN_ONLY_VIEW_COUNT,

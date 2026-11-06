@@ -9,10 +9,9 @@ import {
 } from '@/components/ui/resizable';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
 import { useNotificationSocket } from '@/hooks/use-notification-socket';
-import { fetchClient } from '@services/openapi/client';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
+
 import React, { useState } from 'react';
 import Navbar from '../navbar/navbar';
 
@@ -36,17 +35,12 @@ export default function MainLayout(): React.JSX.Element {
     const loggedIn = !isInitializing && isLoggedIn();
     const notificationsReady = useNotificationSocket(loggedIn);
 
-    const { data: unreadNotifications } = useQuery({
-        queryKey: queryKeys.notifications.unreadCount(),
-        enabled: loggedIn && notificationsReady,
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/notifications/unread-count/',
-            );
-            if (error) throw { response, error };
-            return data!;
-        },
-    });
+    const { data: unreadNotifications } = $api.useQuery(
+        'get',
+        '/notifications/unread-count/',
+        undefined,
+        { enabled: loggedIn && notificationsReady },
+    );
     const unreadNotificationsCount = unreadNotifications?.count ?? 0;
 
     const handleNotifications = () => {

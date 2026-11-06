@@ -8,7 +8,6 @@ if (serverDsn) {
     Sentry.init({
         dsn: serverDsn,
         environment: process.env.NODE_ENV ?? 'development',
-        sendDefaultPii: true,
         tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
     });
 }

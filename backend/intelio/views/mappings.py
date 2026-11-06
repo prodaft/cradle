@@ -6,7 +6,6 @@ from contextlib import contextmanager
 from django.apps import apps
 from django.db import IntegrityError, transaction
 from django.urls import reverse
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -16,7 +15,7 @@ from rest_framework.views import APIView
 
 from core.openapi import get_common_error_responses, get_error_responses
 from core.query_lang import matches_text, parse_search
-from core.utils import fields_to_form
+from core.utils import FORM_FIELD_TYPES, fields_to_form
 from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
 from user.permissions import HasManagerRole
 
@@ -30,6 +29,51 @@ from ..exceptions import (
 )
 from ..models.base import ClassMapping
 from ..serializers import ClassMappingSerializer, MappingSubclassSerializer
+
+MAPPING_KEYS_SCHEMA = {
+    "type": "object",
+    "description": "Form descriptor for each editable field of the mapping class, keyed by field name.",
+    "additionalProperties": {
+        "type": "object",
+        "properties": {
+            "type": {"type": "string", "enum": list(FORM_FIELD_TYPES)},
+            "options": {
+                "type": "array",
+                "items": {"type": "string"},
+                "nullable": True,
+                "description": "Allowed values when type is options.",
+            },
+            "description": {"type": "string", "nullable": True},
+            "required": {"type": "boolean"},
+            "default": {"nullable": True, "description": "Field default, or null when there is none."},
+        },
+        "required": ["type", "options", "description", "required", "default"],
+    },
+}
+
+MAPPING_INSTANCE_SCHEMA = {
+    "type": "object",
+    "description": "Mapping instance: the shared fields below plus the mapping class's own fields.",
+    "properties": {
+        "id": {"type": "string", "format": "uuid", "readOnly": True},
+        "internal_class": {"type": "string", "description": "Subtype of the CRADLE entry class this mapping targets."},
+    },
+    "required": ["id", "internal_class"],
+    "additionalProperties": True,
+}
+
+
+MAPPING_REQUEST_SCHEMA = {
+    "type": "object",
+    "description": "The mapping class's own fields, plus the entry class subtype it targets.",
+    "properties": {
+        "internal_class": {
+            "type": "string",
+            "description": "Subtype of the CRADLE entry class this mapping targets; required when creating.",
+        },
+    },
+    "additionalProperties": True,
+}
 
 
 def _get_mapping_class(class_name: str):
@@ -116,10 +160,7 @@ class ClassMappingSubclassesAPIView(APIView):
         summary="Get mapping keys schema",
         description="Given a class name, return the possible field mappings.",
         responses={
-            200: {
-                "type": "object",
-                "description": "Field mapping schema",
-            },
+            200: MAPPING_KEYS_SCHEMA,
             **get_error_responses(
                 IntelIOErrorCodes.UNKNOWN_MAPPING,
                 IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
@@ -147,13 +188,7 @@ class MappingKeysSchemaView(APIView):
         summary="Get mapping instances",
         description="Get all mapping instances for a given class.",
         responses={
-            200: {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "description": "Mapping instance data",
-                },
-            },
+            200: {"type": "array", "items": MAPPING_INSTANCE_SCHEMA},
             **get_error_responses(
                 IntelIOErrorCodes.UNKNOWN_MAPPING,
                 IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
@@ -165,12 +200,9 @@ class MappingKeysSchemaView(APIView):
         operation_id="mappings_schema_create",
         summary="Create mapping",
         description="Create a new mapping for a given class.",
-        request=OpenApiTypes.OBJECT,
+        request={"application/json": MAPPING_REQUEST_SCHEMA},
         responses={
-            201: {
-                "type": "object",
-                "description": "Mapping instance data",
-            },
+            201: MAPPING_INSTANCE_SCHEMA,
             **get_error_responses(
                 IntelIOErrorCodes.UNKNOWN_MAPPING,
                 IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
@@ -223,7 +255,7 @@ class MappingSchemaView(APIView):
         summary="Get mapping",
         description="Return one mapping of a given class.",
         responses={
-            200: {"type": "object", "description": "Mapping instance data"},
+            200: MAPPING_INSTANCE_SCHEMA,
             **get_error_responses(
                 IntelIOErrorCodes.UNKNOWN_MAPPING,
                 IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
@@ -236,12 +268,9 @@ class MappingSchemaView(APIView):
         operation_id="mappings_partial_update",
         summary="Update mapping",
         description="Update an existing mapping of a given class.",
-        request=OpenApiTypes.OBJECT,
+        request={"application/json": MAPPING_REQUEST_SCHEMA},
         responses={
-            200: {
-                "type": "object",
-                "description": "Mapping instance data",
-            },
+            200: MAPPING_INSTANCE_SCHEMA,
             **get_error_responses(
                 IntelIOErrorCodes.UNKNOWN_MAPPING,
                 IntelIOErrorCodes.INVALID_MAPPING_SELECTION,

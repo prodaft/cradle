@@ -1,11 +1,13 @@
 import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { type RefObject, ComponentType, useMemo, useState } from 'react';
 import type Sigma from 'sigma';
-import ExplorerPanel from './explorer-panel';
+import ExplorerPanel, { ColorDot, displayName } from './explorer-panel';
 import { type Edge, type EdgeRelation, type Node } from './graph-filter-utils';
 import GraphFilters from './graph-filters';
 import GraphSettings from './graph-settings';
+
+/** How wide (in pixels) Focus makes a node at least, zooming in as needed. */
+const FOCUS_PIXELS = 24;
 
 interface Entry {
     id: string;
@@ -99,20 +101,22 @@ export default function GraphControl({
             .slice(0, 10);
     }, [nodes, draft]);
 
+    const focusNode = (node: Node) => {
+        const sigma = sigmaRef.current?.sigma;
+        const data = sigma?.getNodeDisplayData(node.id);
+        if (!sigma || !data) return; // not drawn, such as when filtered out
+        const camera = sigma.getCamera();
+        const pixels = 2 * sigma.scaleSize(data.size);
+        const growth = sigma.getSetting('itemSizesReference') === 'positions' ? 1 : 2;
+        const ratio =
+            pixels >= FOCUS_PIXELS
+                ? camera.ratio
+                : camera.ratio * (pixels / FOCUS_PIXELS) ** growth;
+        camera.animate({ x: data.x, y: data.y, ratio }, { duration: 250 });
+    };
+
     const selectNode = (node: Node) => {
-        const sigmaInstance = sigmaRef.current?.sigma;
-        if (sigmaInstance) {
-            try {
-                sigmaInstance
-                    .getCamera()
-                    .animate(
-                        sigmaInstance.getNodeDisplayData(node.id) ?? { x: 0, y: 0 },
-                        { duration: 250 },
-                    );
-            } catch (_) {
-                // Node may not be in graph yet
-            }
-        }
+        focusNode(node);
         setSelectedEntries(new Set([node]));
         setDraft('');
     };
@@ -141,21 +145,29 @@ export default function GraphControl({
                             onClear={() => setDraft('')}
                         />
                         {draft && nodeResults.length > 0 && (
-                            <ScrollArea className='absolute z-50 mt-1 w-full rounded-md border border-border bg-popover py-1 shadow-md max-h-48'>
+                            <div className='absolute z-50 left-4 right-4 mt-1 rounded-md border border-border bg-popover py-1 shadow-md max-h-64 overflow-y-auto'>
                                 <ul>
                                     {nodeResults.map((node) => (
                                         <li key={node.id}>
                                             <button
                                                 type='button'
-                                                className='w-full px-3 py-2 text-left text-sm hover:bg-accent'
+                                                className='w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2'
                                                 onClick={() => selectNode(node)}
                                             >
-                                                {node.label ?? node.id}
+                                                <ColorDot color={node.color} />
+                                                <span className='truncate'>
+                                                    {displayName(node)}
+                                                </span>
+                                                {node.subtype && (
+                                                    <span className='ml-auto shrink-0 text-xs text-muted-foreground'>
+                                                        {node.subtype}
+                                                    </span>
+                                                )}
                                             </button>
                                         </li>
                                     ))}
                                 </ul>
-                            </ScrollArea>
+                            </div>
                         )}
                     </div>
                 )}
@@ -168,6 +180,8 @@ export default function GraphControl({
                         onNodeClick={(node) => {
                             setSelectedEntries(new Set([node]));
                         }}
+                        onFocus={focusNode}
+                        onClear={() => setSelectedEntries(new Set())}
                     />
                 </div>
             </div>

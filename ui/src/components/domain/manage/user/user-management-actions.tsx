@@ -57,7 +57,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
             return data;
         },
         meta: { suppressNotification: true },
-        onSuccess: (res: any) => {
+        onSuccess: (res) => {
             setTokensDirectly({
                 accessExpiresAt: new Date(res.access_expires_at),
                 refreshExpiresAt: new Date(res.refresh_expires_at),

@@ -21,7 +21,7 @@ import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/
 import { Spinner } from '@/components/ui/spinner';
 import { useNdjsonQuery } from '@/hooks/query';
 import { fetchClient } from '@services/openapi/client';
-import type { components, operations } from '@services/openapi/schema';
+import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
@@ -83,7 +83,6 @@ export default function SearchDialog({
 
     const { data: entryClasses = [] } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
-        queryKey: ['entry_classes', 'search-command'],
         enabled: isOpen,
         staleTime: 5 * 60_000,
     });
@@ -99,8 +98,9 @@ export default function SearchDialog({
             if (ec.color) {
                 map.set(ec.subtype, ec.color);
                 const parts = ec.subtype.split('/');
-                if (parts.length > 1) {
-                    map.set(parts[parts.length - 1], ec.color);
+                const leaf = parts.at(-1);
+                if (parts.length > 1 && leaf) {
+                    map.set(leaf, ec.color);
                 }
             }
         });
@@ -135,11 +135,11 @@ export default function SearchDialog({
             const listQuery = {
                 page: appliedSearch.page,
                 page_size: appliedSearch.pageSize,
-                ...(trimmed ? { name: trimmed } : {}),
+                ...(trimmed ? { name: [trimmed] } : {}),
                 ...(appliedSearch.subtypes.length > 0
                     ? { subtype: appliedSearch.subtypes }
                     : {}),
-            } as NonNullable<operations['query_list']['parameters']['query']>;
+            };
             const { data, error, response } = await fetchClient.GET('/query/', {
                 params: { query: listQuery },
             });

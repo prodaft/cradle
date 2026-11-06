@@ -44,8 +44,9 @@ import {
 } from '@/components/ui/table';
 import { useNdjsonQuery } from '@/hooks/query';
 import { cn } from '@/lib/utils';
-import { fetchClient } from '@services/openapi/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { operations } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import startCase from 'lodash/startCase';
 import {
     CheckIcon,
@@ -63,11 +64,15 @@ interface Option {
     label: string;
 }
 
+type MappingKeyField =
+    operations['mappings_keys_schema']['responses'][200]['content']['application/json'][string];
+
 interface ColumnDefinition {
-    type: 'options' | 'number' | 'text';
+    type: MappingKeyField['type'] | 'text';
     required?: boolean;
-    default?: any;
-    options?: Option[];
+    default?: unknown;
+    description?: string | null;
+    options?: Option[] | null;
     min?: number;
     max?: number;
     minLength?: number;
@@ -77,6 +82,12 @@ interface ColumnDefinition {
 
 interface ColumnDefinitions {
     [key: string]: ColumnDefinition;
+}
+
+interface MappingRequestBody {
+    id?: string | null;
+    internal_class?: string;
+    [key: string]: unknown;
 }
 
 interface MappingRow {
@@ -167,63 +178,37 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
     const initializedRef = useRef<string | null>(null);
 
-    const { data: mappingKeys, isLoading: isKeysLoading } = useQuery({
-        queryKey: ['mappings', 'keys', id],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/mappings/{class_name}/keys/',
-                { params: { path: { class_name: id } } },
-            );
-            if (error) throw { response, error };
-            return data;
-        },
-        meta: { showErrorToast: true },
-    });
+    const { data: mappingKeys, isLoading: isKeysLoading } = $api.useQuery(
+        'get',
+        '/intelio/mappings/{class_name}/keys/',
+        { params: { path: { class_name: id } } },
+        { meta: { showErrorToast: true } },
+    );
 
     const { data: entryClasses, isLoading: isClassesLoading } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
-        queryKey: ['entry_classes', 'type-mappings'],
         meta: { showErrorToast: true },
     });
 
-    const { data: mappings, isLoading: isMappingsLoading } = useQuery({
-        queryKey: ['mappings', 'schema', id],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/mappings/{class_name}/',
-                { params: { path: { class_name: id } } },
-            );
-            if (error) throw { response, error };
-            return data;
-        },
-        meta: { showErrorToast: true },
-    });
+    const { data: mappings, isLoading: isMappingsLoading } = $api.useQuery(
+        'get',
+        '/intelio/mappings/{class_name}/',
+        { params: { path: { class_name: id } } },
+        { meta: { showErrorToast: true } },
+    );
 
     const isPageLoading = isKeysLoading || isClassesLoading || isMappingsLoading;
 
     const columnDefinitions = useMemo<ColumnDefinitions | null>(() => {
         if (!mappingKeys || !entryClasses) return null;
 
-        const mappingKeyDefs = mappingKeys as unknown as ColumnDefinitions;
-
         const transformedMappingKeys: ColumnDefinitions = {};
-        for (const [key, colDef] of Object.entries(mappingKeyDefs)) {
-            if (colDef.type === 'options' && colDef.options) {
-                const firstOption = colDef.options[0];
-                if (typeof firstOption === 'string') {
-                    transformedMappingKeys[key] = {
-                        ...colDef,
-                        options: (colDef.options as unknown as string[]).map((opt) => ({
-                            value: opt,
-                            label: opt,
-                        })),
-                    };
-                } else {
-                    transformedMappingKeys[key] = colDef;
-                }
-            } else {
-                transformedMappingKeys[key] = colDef;
-            }
+        for (const [key, field] of Object.entries(mappingKeys)) {
+            transformedMappingKeys[key] = {
+                ...field,
+                options:
+                    field.options?.map((opt) => ({ value: opt, label: opt })) ?? null,
+            };
         }
 
         return {
@@ -252,15 +237,15 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         },
     });
 
-    const sendMapping = async (body: Record<string, any>) => {
-        const { data, error, response } = body.id
+    const sendMapping = async ({ id: mappingId, ...body }: MappingRequestBody) => {
+        const { data, error, response } = mappingId
             ? await fetchClient.PATCH('/intelio/mappings/{class_name}/{mapping_id}/', {
-                  params: { path: { class_name: id, mapping_id: body.id } },
-                  body: body satisfies Record<string, unknown>,
+                  params: { path: { class_name: id, mapping_id: mappingId } },
+                  body,
               })
             : await fetchClient.POST('/intelio/mappings/{class_name}/', {
                   params: { path: { class_name: id } },
-                  body: body satisfies Record<string, unknown>,
+                  body,
               });
         if (error) throw { response, error };
         return data;
@@ -274,7 +259,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     });
 
     const saveAllMappings = useMutation({
-        mutationFn: async (dataToSave: Record<string, any>[]) => {
+        mutationFn: async (dataToSave: MappingRequestBody[]) => {
             const promises = dataToSave.map(sendMapping);
             return await Promise.all(promises);
         },
@@ -314,9 +299,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     const buildRequestBody = (
         row: MappingRow,
         opts: { omitId?: boolean } = {},
-    ): Record<string, any> => {
+    ): MappingRequestBody => {
         if (!columnDefinitions) return {};
-        const body: Record<string, any> = {};
+        const body: MappingRequestBody = {};
         for (const [key, value] of Object.entries(row)) {
             if (key === 'edited') continue;
             if (opts.omitId && key === 'id') continue;
@@ -334,10 +319,8 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         if (initializedRef.current === id) return;
 
         initializedRef.current = id;
-        const items = mappings as any[];
-
-        const mappedRows = items.map((mapping) => {
-            const transformedMapping: any = {
+        const mappedRows = mappings.map((mapping) => {
+            const transformedMapping: MappingRow = {
                 id: mapping.id,
                 edited: false,
             };

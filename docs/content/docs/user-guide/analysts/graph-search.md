@@ -23,11 +23,19 @@ treat connected nodes as the same node for graph traversal and grouping.
 ### Explore and focus
 Search within the graph to jump to a specific node, expand neighbors to trace
 related infrastructure or actors, and filter by entry subtype to reduce noise.
-When views get dense, adjust labels and node sizes to keep the layout readable.
+Filtering also hides nodes left without any visible link. Each entity sits in
+the middle of its own area, with the entries around it on rings by how many
+links away they are; the layout is redone whenever the filter changes, and the
+play button loosens it with a force simulation. Hover a node to see
+its name. On large graphs, nodes grow as you zoom in, like places on a map, so
+zoom into a cluster to tell its nodes apart.
 
 ### Inspect relationships
-Select a node to see its linked notes, enrichments, and digests. Select an edge
-to view the source that created the relationship.
+Select a node to open it in the Explorer panel, which lists its connections
+grouped by type. **Focus** zooms the graph to the node and **Open** goes to its
+dashboard, or to the note for note entries. Select an edge to see both of its
+nodes; on graphs with 5,000 links or more, edges can't be selected, to keep the
+graph responsive.
 
 ## Entry search
 

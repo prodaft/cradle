@@ -13,7 +13,7 @@ import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ShareNetworkIcon, TrashIcon } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -41,7 +41,6 @@ export default function ShareNoteDialog({
     const queryClient = useQueryClient();
     const [selected, setSelected] = useState<Option[]>([]);
     const [newAccess, setNewAccess] = useState<ShareLevel>('read');
-    const sharesKey = ['get', '/notes/{note_id}/shares/', noteId] as const;
 
     useEffect(() => {
         if (open) return;
@@ -49,18 +48,13 @@ export default function ShareNoteDialog({
         setNewAccess('read');
     }, [open]);
 
-    const { data: shares, isPending } = useQuery({
-        queryKey: sharesKey,
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/notes/{note_id}/shares/',
-                { params: { path: { note_id: noteId } } },
-            );
-            if (error) throw { response, error };
-            return data;
-        },
-        enabled: open && !!noteId,
-    });
+    const sharesQuery = $api.queryOptions(
+        'get',
+        '/notes/{note_id}/shares/',
+        { params: { path: { note_id: noteId } } },
+        { enabled: open && !!noteId },
+    );
+    const { data: shares, isPending } = useQuery(sharesQuery);
 
     const searchCandidates = async (search: string): Promise<Option[]> => {
         const { data } = await fetchClient.GET('/notes/{note_id}/shares/candidates/', {
@@ -94,7 +88,7 @@ export default function ShareNoteDialog({
         },
         meta: { successMessage: 'Sharing updated' },
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: sharesKey });
+            void queryClient.invalidateQueries({ queryKey: sharesQuery.queryKey });
         },
     });
 

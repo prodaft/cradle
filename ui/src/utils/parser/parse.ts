@@ -1,3 +1,4 @@
+import type { FileReferenceWithNote } from '@/types/models';
 import { HashIcon } from '@phosphor-icons/react';
 import { fetchNdjson } from '@services/openapi/ndjson-stream';
 import MarkdownIt from 'markdown-it';
@@ -11,7 +12,7 @@ const hashIcon = renderToStaticMarkup(createElement(HashIcon, { size: 16 }));
 export async function parseMarkdown(
     mdContent: string,
     baseURL: string,
-    fileData?: any[],
+    fileData?: FileReferenceWithNote[],
 ): Promise<{ html: string; metadata: Record<string, any> } | undefined> {
     try {
         const entries = await fetchNdjson({

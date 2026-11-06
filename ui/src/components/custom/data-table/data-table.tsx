@@ -1,9 +1,4 @@
-import {
-    type Cell,
-    flexRender,
-    type Row,
-    type Table as TanstackTable,
-} from '@tanstack/react-table';
+import { type Cell, flexRender } from '@tanstack/react-table';
 import * as React from 'react';
 
 import { DataTablePagination } from '@/components/custom/data-table/data-table-pagination';
@@ -18,11 +13,16 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { getCommonPinningStyles } from '@/lib/data-table';
+import {
+    type DataTableFeatures,
+    type DataTableInstance,
+    type DataTableRow,
+    getCommonPinningStyles,
+} from '@/lib/data-table';
 import { cn } from '@/lib/utils';
 
-interface DataTableProps<TData> extends React.ComponentProps<'div'> {
-    table: TanstackTable<TData>;
+interface DataTableProps<TData extends object> extends React.ComponentProps<'div'> {
+    table: DataTableInstance<TData>;
     actionBar?: React.ReactNode;
     onRowClick?: (row: TData) => void;
     getRowHref?: (row: TData) => string;
@@ -30,11 +30,11 @@ interface DataTableProps<TData> extends React.ComponentProps<'div'> {
      * When set, handles row clicks instead of onRowClick / getRowHref (use for expand, etc.).
      */
     onRowClickRow?: (
-        row: Row<TData>,
+        row: DataTableRow<TData>,
         event: React.MouseEvent<HTMLTableRowElement>,
     ) => void;
     /** When using onRowClickRow, limit pointer/click to rows where this is true (default: all rows). */
-    interactiveRow?: (row: Row<TData>) => boolean;
+    interactiveRow?: (row: DataTableRow<TData>) => boolean;
     showViewOptions?: boolean;
     /** Right side of the toolbar row (e.g. column visibility with align="end") */
     toolbarEnd?: React.ReactNode;
@@ -49,15 +49,15 @@ interface DataTableProps<TData> extends React.ComponentProps<'div'> {
     /** comfortable = fixed h-12 rows (default); compact = natural row height */
     density?: 'comfortable' | 'compact';
     /** Renders a full-width cell below the row when row.getIsExpanded() is true */
-    renderSubRow?: (row: Row<TData>) => React.ReactNode;
-    getRowClassName?: (row: Row<TData>) => string | undefined;
+    renderSubRow?: (row: DataTableRow<TData>) => React.ReactNode;
+    getRowClassName?: (row: DataTableRow<TData>) => string | undefined;
     getCellProps?: (
-        cell: Cell<TData, unknown>,
+        cell: Cell<DataTableFeatures, TData, unknown>,
     ) => React.TdHTMLAttributes<HTMLTableCellElement> | undefined;
     emptyMessage?: string;
 }
 
-export function DataTable<TData>({
+export function DataTable<TData extends object>({
     table,
     actionBar,
     onRowClick,

@@ -28,7 +28,7 @@ import {
     UserPlusIcon,
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
+import { type components, userRoleEnumValues } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -47,7 +47,7 @@ const addUserSchema = z.object({
         .string()
         .min(8, { error: 'Password must be at least 8 characters' })
         .min(1, { error: 'Password is required' }),
-    role: z.string().min(1, { error: 'Role is required' }),
+    role: z.enum(userRoleEnumValues, { error: 'Role is required' }),
     emailConfirmed: z.boolean().default(false),
     isActive: z.boolean().default(true),
 });
@@ -77,7 +77,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
 
     const createUser = useMutation({
         mutationFn: async (data: FormData) => {
-            const payload: any = {
+            const payload: components['schemas']['UserCreateSerializerAdminRequest'] = {
                 username: data.username,
                 email: data.email,
                 password: data.password,

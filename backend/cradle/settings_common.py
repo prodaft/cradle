@@ -177,11 +177,8 @@ SPECTACULAR_SETTINGS = {
         "cradle.schema_processors.postprocess_schema_operation_ids",
         "cradle.schema_processors.postprocess_schema_pagination_refs",
         "cradle.schema_processors.postprocess_schema_path_parameters",
+        "cradle.schema_processors.postprocess_schema_error_responses",
     ],
-    # Error handling - RFC 9457 compliant
-    "ENUM_NAME_OVERRIDES": {
-        "ErrorCodeEnum": "core.exceptions.ErrorCode",
-    },
 }
 
 SIMPLE_JWT = {

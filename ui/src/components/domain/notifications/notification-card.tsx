@@ -66,12 +66,9 @@ export default function NotificationCard({
         },
         onSuccess: (_data, variables) => {
             setUnreadStatus(variables.is_unread);
-            void queryClient.invalidateQueries({
-                queryKey: queryKeys.notifications.unreadCount(),
-            });
-            void queryClient.invalidateQueries({
-                queryKey: queryKeys.notifications.all,
-            });
+            for (const queryKey of queryKeys.notifications.all()) {
+                void queryClient.invalidateQueries({ queryKey });
+            }
         },
     });
 

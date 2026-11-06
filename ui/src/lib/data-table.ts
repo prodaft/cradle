@@ -1,28 +1,68 @@
-import type { Column } from '@tanstack/react-table';
+import {
+    type Column,
+    type ColumnDef,
+    columnFilteringFeature,
+    columnPinningFeature,
+    columnSizingFeature,
+    columnVisibilityFeature,
+    metaHelper,
+    type ReactTable,
+    type Row,
+    rowExpandingFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    rowSortingFeature,
+    tableFeatures,
+} from '@tanstack/react-table';
 
-export function getCommonPinningStyles<TData>({
+interface DataTableColumnMeta {
+    label?: string;
+}
+
+/**
+ * Feature set shared by every table rendered through `DataTable`.
+ * Covers what the shared header, toolbar, pagination, and pinning helpers call.
+ */
+export const dataTableFeatures = tableFeatures({
+    columnFilteringFeature,
+    columnPinningFeature,
+    columnSizingFeature,
+    columnVisibilityFeature,
+    rowExpandingFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    rowSortingFeature,
+    columnMeta: metaHelper<DataTableColumnMeta>(),
+});
+
+export type DataTableFeatures = typeof dataTableFeatures;
+export type DataTableInstance<TData extends object> = ReactTable<
+    DataTableFeatures,
+    TData
+>;
+export type DataTableColumn<TData extends object, TValue = unknown> = Column<
+    DataTableFeatures,
+    TData,
+    TValue
+>;
+export type DataTableColumnDef<TData extends object, TValue = unknown> = ColumnDef<
+    DataTableFeatures,
+    TData,
+    TValue
+>;
+export type DataTableRow<TData extends object> = Row<DataTableFeatures, TData>;
+
+export function getCommonPinningStyles<TData extends object>({
     column,
-    withBorder = false,
 }: {
-    column: Column<TData>;
-    withBorder?: boolean;
+    column: DataTableColumn<TData>;
 }): React.CSSProperties {
     const isPinned = column.getIsPinned();
-    const isLastLeftPinnedColumn =
-        isPinned === 'left' && column.getIsLastColumn('left');
-    const isFirstRightPinnedColumn =
-        isPinned === 'right' && column.getIsFirstColumn('right');
 
     return {
-        boxShadow: withBorder
-            ? isLastLeftPinnedColumn
-                ? '-4px 0 4px -4px var(--border) inset'
-                : isFirstRightPinnedColumn
-                  ? '4px 0 4px -4px var(--border) inset'
-                  : undefined
-            : undefined,
-        left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
-        right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
+        insetInlineStart:
+            isPinned === 'start' ? `${column.getStart('start')}px` : undefined,
+        insetInlineEnd: isPinned === 'end' ? `${column.getAfter('end')}px` : undefined,
         opacity: isPinned ? 0.97 : 1,
         position: isPinned ? 'sticky' : 'relative',
         background: isPinned ? 'var(--background)' : 'var(--background)',

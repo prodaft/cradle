@@ -10,6 +10,7 @@ from django.db import transaction
 from django.db.models import BooleanField, Count, ExpressionWrapper, Prefetch, Q
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -190,28 +191,28 @@ def _log_restricted_notes(user: CradleUser, notes) -> None:
             ),
             OpenApiParameter(
                 name="created_at_gte",
-                type=str,
+                type=OpenApiTypes.DATETIME,
                 location=OpenApiParameter.QUERY,
                 description="Filter by creation time greater than or equal to (ISO datetime format)",
                 required=False,
             ),
             OpenApiParameter(
                 name="created_at_lte",
-                type=str,
+                type=OpenApiTypes.DATETIME,
                 location=OpenApiParameter.QUERY,
                 description="Filter by creation time less than or equal to (ISO datetime format)",
                 required=False,
             ),
             OpenApiParameter(
                 name="updated_at_gte",
-                type=str,
+                type=OpenApiTypes.DATETIME,
                 location=OpenApiParameter.QUERY,
                 description="Filter by last edit time greater than or equal to (ISO datetime format)",
                 required=False,
             ),
             OpenApiParameter(
                 name="updated_at_lte",
-                type=str,
+                type=OpenApiTypes.DATETIME,
                 location=OpenApiParameter.QUERY,
                 description="Filter by last edit time less than or equal to (ISO datetime format)",
                 required=False,
@@ -763,14 +764,14 @@ class NoteRelinkAll(APIView):
             ),
             OpenApiParameter(
                 name="created_at_gte",
-                type=str,
+                type=OpenApiTypes.DATETIME,
                 location=OpenApiParameter.QUERY,
                 description="Only files whose note was created at or after this time (ISO datetime format)",
                 required=False,
             ),
             OpenApiParameter(
                 name="created_at_lte",
-                type=str,
+                type=OpenApiTypes.DATETIME,
                 location=OpenApiParameter.QUERY,
                 description="Only files whose note was created at or before this time (ISO datetime format)",
                 required=False,

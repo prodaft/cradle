@@ -28,6 +28,7 @@ from ..exceptions import (
 )
 from ..models import ExternalIdentity
 from ..serializers import (
+    OAuthConnectResponseSerializer,
     OAuthConnectSerializer,
     TokenObtainSerializer,
     TokenPairRetrieveSerializer,
@@ -100,9 +101,10 @@ def _fetch_identity(provider: str, code: str, redirect_uri: str) -> tuple[str, s
     post=extend_schema(
         operation_id="users_me_oauth_create",
         summary="Connect OAuth provider",
+        description="Link an external OAuth account to the current user, or refresh an existing link.",
         request=OAuthConnectSerializer,
         responses={
-            200: None,
+            200: OAuthConnectResponseSerializer,
             **get_error_responses(
                 UserErrorCodes.EXTERNAL_ACCOUNT_IN_USE,
                 UserErrorCodes.OAUTH_SIGN_IN_FAILED,
@@ -160,6 +162,7 @@ class OAuthConnectView(APIView):
     post=extend_schema(
         operation_id="auth_oauth_login",
         summary="Login with OAuth provider",
+        description="Exchange an OAuth authorization code for a session; sets the auth cookies.",
         request=OAuthConnectSerializer,
         auth=[],
         responses={
@@ -236,6 +239,7 @@ class OAuthLoginView(APIView):
     delete=extend_schema(
         operation_id="users_me_oauth_destroy",
         summary="Disconnect OAuth provider",
+        description="Remove the link between the current user and an external OAuth account.",
         responses={
             204: None,
             **get_common_error_responses(),

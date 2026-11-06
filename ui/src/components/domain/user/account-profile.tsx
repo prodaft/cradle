@@ -7,11 +7,10 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
-import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { roleBadgeVariant, USER_ROLE_LABELS } from '@/utils/auth';
-import { $api, fetchClient } from '@services/openapi/client';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
+
 import { Fragment } from 'react';
 
 export default function AccountProfile() {
@@ -22,13 +21,7 @@ export default function AccountProfile() {
         { meta: { suppressNotification: true } },
     );
 
-    const { data: memberships } = useQuery({
-        queryKey: queryKeys.teams.user('me'),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET('/users/me/teams/');
-            if (error) throw { response, error };
-            return data;
-        },
+    const { data: memberships } = $api.useQuery('get', '/users/me/teams/', undefined, {
         meta: { suppressNotification: true },
     });
 

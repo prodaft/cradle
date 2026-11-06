@@ -24,17 +24,18 @@ import {
 import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuthState } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import {
     EMPTY_SEARCH_STATE,
     FREE_TEXT_SCHEMA,
     type SearchState,
 } from '@/lib/search-query/search-schema';
 import { SignOutIcon, UserMinusIcon, UserPlusIcon } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import { type components, teamRoleEnumValues } from '@services/openapi/schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useMutation } from '@tanstack/react-query';
+import { useTable } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Team = components['schemas']['Team'];
@@ -86,32 +87,21 @@ export default function TeamMembersForm({ team }: TeamMembersFormProps) {
         data: membersPage,
         isPending,
         isFetching,
-    } = useQuery({
-        queryKey: [...queryKeys.teams.members(team.id), pagination, appliedSearch],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/teams/{team_id}/members/',
-                {
-                    params: {
-                        path: { team_id: team.id },
-                        query: {
-                            page: pagination.pageIndex + 1,
-                            page_size: pagination.pageSize,
-                            ...(appliedSearch ? { search: appliedSearch } : {}),
-                        },
-                    },
-                },
-            );
-            if (error) throw { response, error };
-            return data;
+    } = $api.useQuery('get', '/teams/{team_id}/members/', {
+        params: {
+            path: { team_id: team.id },
+            query: {
+                page: pagination.pageIndex + 1,
+                page_size: pagination.pageSize,
+                ...(appliedSearch ? { search: appliedSearch } : {}),
+            },
         },
     });
 
-    // Membership changes alter counts, roles and every member's effective access.
-    const invalidate = [
-        { queryKey: queryKeys.teams.all },
-        { queryKey: ['get', '/entries/entities/{entity_id}/access/users/'] },
-        { queryKey: ['get', '/users/{user_id}/access/'] },
+    const invalidateOnChange = [
+        ...invalidate(...queryKeys.teams.all()),
+        { queryKey: queryKeys.access.entityUsers() },
+        { queryKey: queryKeys.access.users() },
     ];
 
     const searchCandidates = async (search: string): Promise<Option[]> => {
@@ -140,7 +130,7 @@ export default function TeamMembersForm({ team }: TeamMembersFormProps) {
             );
             if (error) throw { response, error };
         },
-        meta: { successMessage: 'Member added', invalidateQueries: invalidate },
+        meta: { successMessage: 'Member added', invalidateQueries: invalidateOnChange },
         onSuccess: () => setIsAddOpen(false),
     });
 
@@ -161,7 +151,7 @@ export default function TeamMembersForm({ team }: TeamMembersFormProps) {
             );
             if (error) throw { response, error };
         },
-        meta: { successMessage: 'Role updated', invalidateQueries: invalidate },
+        meta: { successMessage: 'Role updated', invalidateQueries: invalidateOnChange },
     });
 
     const removeMember = useMutation({
@@ -172,10 +162,13 @@ export default function TeamMembersForm({ team }: TeamMembersFormProps) {
             );
             if (error) throw { response, error };
         },
-        meta: { successMessage: 'Member removed', invalidateQueries: invalidate },
+        meta: {
+            successMessage: 'Member removed',
+            invalidateQueries: invalidateOnChange,
+        },
     });
 
-    const columns = useMemo<ColumnDef<TeamMember>[]>(
+    const columns = useMemo<DataTableColumnDef<TeamMember>[]>(
         () => [
             {
                 id: 'username',
@@ -281,12 +274,12 @@ export default function TeamMembersForm({ team }: TeamMembersFormProps) {
         [isAdmin, canManage, userId, changeRole, removeMember],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: membersPage?.results ?? [],
         columns,
         state: { pagination },
         onPaginationChange: setPagination,
-        getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
         pageCount: Math.max(1, membersPage?.total_pages ?? 1),
         rowCount: membersPage?.count,

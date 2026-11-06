@@ -12,15 +12,14 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthState } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
 import {
     ClockCounterClockwiseIcon,
     GearIcon,
     ShieldIcon,
     UsersThreeIcon,
 } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
+
 import {
     useParams,
     useRouter,
@@ -79,22 +78,18 @@ export default function TeamSettingsPage() {
         data: team,
         isLoading,
         isError,
-    } = useQuery({
-        queryKey: queryKeys.teams.detail(teamId),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/teams/{team_id}/',
-                {
-                    params: { path: { team_id: teamId } },
-                },
-            );
-            if (error) throw { response, error };
-            return data;
+    } = $api.useQuery(
+        'get',
+        '/teams/{team_id}/',
+        {
+            params: { path: { team_id: teamId } },
         },
-        enabled: !!teamId,
-        retry: false,
-        meta: { showErrorToast: false, suppressNotification: true },
-    });
+        {
+            enabled: !!teamId,
+            retry: false,
+            meta: { showErrorToast: false, suppressNotification: true },
+        },
+    );
 
     const dockPanelTitle = useMemo(
         () => (isError ? 'Not found' : team?.name ? `Manage: ${team.name}` : 'Manage'),

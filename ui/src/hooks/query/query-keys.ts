@@ -1,77 +1,109 @@
 /**
  * Query key factory for type-safe query keys
- * Centralizes all query keys to prevent typos and ensure consistency
+ * Centralizes all query keys to prevent typos and ensure consistency.
+ *
+ * API queries use openapi-react-query keys: ``['get', path, init?]``. ``apiKey(path)`` is the prefix
+ * that matches every query on that path, whatever its params, so it is what invalidation uses.
  */
+
+import type { paths } from '@services/openapi/schema';
+import type { QueryKey } from '@tanstack/react-query';
+
+/** Paths with a GET operation. */
+type GetPath = {
+    [P in keyof paths]: paths[P] extends { get: object } ? P : never;
+}[keyof paths];
+
+/** Prefix of every ``$api`` GET query on ``path``. */
+export const apiKey = <P extends GetPath>(path: P) => ['get', path] as const;
+
+/** Mutation ``meta.invalidateQueries`` entries for one or more key prefixes. */
+export const invalidate = (...keys: readonly QueryKey[]) =>
+    keys.map((queryKey) => ({ queryKey }));
 
 export const queryKeys = {
     // Notes
     notes: {
-        apiList: () => ['get', '/notes/'] as const,
+        apiList: () => apiKey('/notes/'),
         apiDetail: (id: string) =>
             [
-                'get',
-                '/notes/{note_id}/',
+                ...apiKey('/notes/{note_id}/'),
                 { params: { path: { note_id: id } } },
             ] as const,
-        apiDetails: () => ['get', '/notes/{note_id}/'] as const,
+        apiDetails: () => apiKey('/notes/{note_id}/'),
     },
 
     // Reports
     reports: {
-        all: ['reports'] as const,
-        lists: () => [...queryKeys.reports.all, 'list'] as const,
-        list: (params?: Record<string, unknown>) =>
-            [...queryKeys.reports.lists(), params] as const,
+        lists: () => apiKey('/reports/'),
     },
 
     // Files
     files: {
-        apiList: () => ['get', '/files/'] as const,
-        apiDetails: () => ['get', '/files/{file_id}/'] as const,
+        apiList: () => apiKey('/files/'),
+        apiDetails: () => apiKey('/files/{file_id}/'),
     },
 
     // Enrichment
     enrichment: {
         requests: {
-            lists: () => ['enrichment', 'requests', 'list'] as const,
-            list: (params?: Record<string, unknown>) =>
-                ['enrichment', 'requests', 'list', params] as const,
-        },
-        results: {
-            detail: (id: string) => ['enrichment', 'results', 'detail', id] as const,
-            relations: (params: {
-                id: string;
-                enricherType: string;
-                entryId?: number;
-                page?: number;
-                pageSize?: number;
-                search?: string;
-            }) => ['enrichment', 'results', 'relations', params] as const,
+            lists: () => apiKey('/intelio/enrichments/'),
         },
     },
 
     // Knowledge Graph
     knowledgeGraph: {
-        all: ['knowledgeGraph'] as const,
+        full: () => [...apiKey('/knowledge-graph/'), 'full'] as const,
+        all: () =>
+            [
+                apiKey('/knowledge-graph/'),
+                apiKey('/knowledge-graph/paths/'),
+                apiKey('/knowledge-graph/neighbors/'),
+                apiKey('/knowledge-graph/inaccessible/'),
+            ] as const,
     },
 
     // Users
     users: {
-        apiList: () => ['get', '/users/'] as const,
-        apiDetails: () => ['get', '/users/{user_id}/'] as const,
+        apiList: () => apiKey('/users/'),
+        apiDetails: () => apiKey('/users/{user_id}/'),
+        sessions: () => apiKey('/users/{user_id}/sessions/'),
+    },
+
+    // Effective access: per-user access on an entity, and a user's access across entities.
+    // Without an id the key matches every entity or user.
+    access: {
+        entityUsers: (entityId?: number) =>
+            entityId === undefined
+                ? apiKey('/entries/entities/{entity_id}/access/users/')
+                : ([
+                      ...apiKey('/entries/entities/{entity_id}/access/users/'),
+                      { params: { path: { entity_id: entityId } } },
+                  ] as const),
+        users: (userId?: string) =>
+            userId === undefined
+                ? apiKey('/users/{user_id}/access/')
+                : ([
+                      ...apiKey('/users/{user_id}/access/'),
+                      { params: { path: { user_id: userId } } },
+                  ] as const),
     },
 
     // Entities
     entities: {
-        all: ['entities'] as const,
-        lists: () => [...queryKeys.entities.all, 'list'] as const,
-        list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
-            [...queryKeys.entities.lists(), filters] as const,
+        lists: () => apiKey('/query/'),
+        stream: () => apiKey('/entries/entities/stream/'),
+        details: () => apiKey('/entries/entities/{entity_id}/'),
         apiDetail: (id: number) =>
             [
-                'get',
-                '/entries/entities/{entity_id}/',
+                ...apiKey('/entries/entities/{entity_id}/'),
                 { params: { path: { entity_id: id } } },
+            ] as const,
+        all: () =>
+            [
+                queryKeys.entities.lists(),
+                queryKeys.entities.stream(),
+                queryKeys.entities.details(),
             ] as const,
     },
 
@@ -80,65 +112,61 @@ export const queryKeys = {
     entryLists: () =>
         [
             queryKeys.entities.lists(),
+            queryKeys.entities.stream(),
             queryKeys.notes.apiList(),
             queryKeys.files.apiList(),
         ] as const,
 
-    // Teams
+    // Teams: lists, details, members, access grants and memberships.
     teams: {
-        all: ['teams'] as const,
-        lists: () => [...queryKeys.teams.all, 'list'] as const,
-        list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
-            [...queryKeys.teams.lists(), filters] as const,
-        detail: (id: string) => [...queryKeys.teams.all, 'detail', id] as const,
-        members: (id: string) => [...queryKeys.teams.all, 'members', id] as const,
-        access: (id: string) => [...queryKeys.teams.all, 'access', id] as const,
-        entity: (entityId: number) =>
-            [...queryKeys.teams.all, 'entity', entityId] as const,
-        user: (userId: string) => [...queryKeys.teams.all, 'user', userId] as const,
+        all: () =>
+            [
+                apiKey('/teams/'),
+                apiKey('/teams/{team_id}/'),
+                apiKey('/teams/{team_id}/members/'),
+                apiKey('/teams/{team_id}/candidates/'),
+                apiKey('/teams/{team_id}/access/'),
+                apiKey('/entries/entities/{entity_id}/access/teams/'),
+                apiKey('/users/{user_id}/teams/'),
+                apiKey('/users/me/teams/'),
+            ] as const,
+        lists: () => apiKey('/teams/'),
     },
 
     // Entry Types
     entryTypes: {
-        apiList: () => ['get', '/entries/entry-classes/'] as const,
+        apiList: () => apiKey('/entries/entry-classes/'),
+        stream: () => apiKey('/entries/entry-classes/stream/'),
         apiDetail: (subtype: string) =>
             [
-                'get',
-                '/entries/entry-classes/{class_subtype}/',
+                ...apiKey('/entries/entry-classes/{class_subtype}/'),
                 { params: { path: { class_subtype: subtype } } },
             ] as const,
     },
 
     // Management
     management: {
-        all: ['management'] as const,
-        settings: () => [...queryKeys.management.all, 'settings'] as const,
+        settings: () => apiKey('/management/settings/'),
     },
 
     // Notifications
     notifications: {
-        all: ['notifications'] as const,
-        list: (mode: 'all' | 'unread' = 'all') =>
-            [...queryKeys.notifications.all, 'list', mode] as const,
-        unreadCount: () => [...queryKeys.notifications.all, 'unread-count'] as const,
+        unreadCount: () => apiKey('/notifications/unread-count/'),
+        all: () =>
+            [apiKey('/notifications/'), queryKeys.notifications.unreadCount()] as const,
     },
 
     // Digests
     digests: {
-        all: ['digests'] as const,
-        lists: () => [...queryKeys.digests.all, 'list'] as const,
-        detail: (id: string) => [...queryKeys.digests.all, 'detail', id] as const,
-        relations: (params: {
-            id: string;
-            page: number;
-            pageSize: number;
-            search?: string;
-        }) => [...queryKeys.digests.all, 'relations', params] as const,
-        notes: (params: {
-            id: string;
-            page: number;
-            pageSize: number;
-            search?: string;
-        }) => [...queryKeys.digests.all, 'notes', params] as const,
+        all: () =>
+            [
+                queryKeys.digests.lists(),
+                apiKey('/intelio/digests/{digest_id}/'),
+                queryKeys.digests.relations(),
+                queryKeys.digests.notes(),
+            ] as const,
+        lists: () => apiKey('/intelio/digests/'),
+        relations: () => apiKey('/intelio/digests/{digest_id}/relations/'),
+        notes: () => apiKey('/intelio/digests/{digest_id}/notes/'),
     },
 } as const;

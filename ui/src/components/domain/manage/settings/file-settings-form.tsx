@@ -17,18 +17,21 @@ import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { queryKeys, useNdjsonQuery } from '@/hooks/query';
+import { invalidate, queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { SelectOption } from '@/types/models';
 import { getSuccessMessage } from '@/utils/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import bytes from 'bytes';
 import { useEffect, useId, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
+
+type SystemSettings = components['schemas']['SystemSettings'];
 
 type SubtypeOption = SelectOption<string>;
 
@@ -82,19 +85,8 @@ const FILE_SETTINGS_DEFAULTS: FileSettingsFormValues = {
     uploadLimit: '2 GB',
 };
 
-interface FileSettingsApi {
-    files?: {
-        autoprocess_files?: boolean;
-        md5_subtype?: string | null;
-        sha1_subtype?: string | null;
-        sha256_subtype?: string | null;
-        max_file_size_for_hashing?: number | null;
-        upload_limit?: number | null;
-    };
-}
-
 function getFileSettingsFromApi(
-    settings: FileSettingsApi | null | undefined,
+    settings: SystemSettings | null | undefined,
 ): FileSettingsFormValues | null {
     if (!settings?.files) return null;
     const f = settings.files;
@@ -142,7 +134,6 @@ export default function FileSettingsForm() {
 
     const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
-        queryKey: ['entry_classes', 'file-settings'],
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
@@ -153,15 +144,7 @@ export default function FileSettingsForm() {
         isError: isSettingsError,
         error: settingsError,
         refetch: refetchSettings,
-    } = useQuery({
-        queryKey: queryKeys.management.settings(),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/management/settings/',
-            );
-            if (error) throw { response, error };
-            return data;
-        },
+    } = $api.useQuery('get', '/management/settings/', undefined, {
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
@@ -190,7 +173,7 @@ export default function FileSettingsForm() {
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.management.settings() }],
+            invalidateQueries: invalidate(queryKeys.management.settings()),
             successMessage: 'File settings updated successfully!',
         },
         onSuccess: (_, variables) => {

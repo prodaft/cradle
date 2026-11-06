@@ -14,8 +14,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import { BellRingingIcon, XIcon } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import NotificationCard from './notification-card';
@@ -60,33 +60,31 @@ export default function NotificationsPanel({
         isFetchingNextPage,
         isLoading,
         dataUpdatedAt,
-    } = useInfiniteQuery({
-        queryKey: queryKeys.notifications.list(filter === 'unread' ? 'unread' : 'all'),
-        queryFn: async ({ pageParam }) => {
-            const unreadOnly = filter === 'unread';
-            const { data, error, response } = await fetchClient.GET('/notifications/', {
-                params: {
-                    query: {
-                        page: pageParam,
-                        page_size: PAGE_SIZE,
-                        ...(unreadOnly ? { unread_only: true } : {}),
-                    },
+    } = $api.useInfiniteQuery(
+        'get',
+        '/notifications/',
+        {
+            params: {
+                query: {
+                    page_size: PAGE_SIZE,
+                    ...(filter === 'unread' ? { unread_only: true } : {}),
                 },
-            });
-            if (error) throw { response, error };
-            return data!;
+            },
         },
-        getNextPageParam: (lastPage) => {
-            if (lastPage.page < lastPage.total_pages) {
-                return lastPage.page + 1;
-            }
-            return undefined;
+        {
+            pageParamName: 'page',
+            getNextPageParam: (lastPage) => {
+                if (lastPage.page < lastPage.total_pages) {
+                    return lastPage.page + 1;
+                }
+                return undefined;
+            },
+            initialPageParam: 1,
+            meta: {
+                showErrorToast: true,
+            },
         },
-        initialPageParam: 1,
-        meta: {
-            showErrorToast: true,
-        },
-    });
+    );
 
     useEffect(() => {
         if (filter !== 'all' || !dataUpdatedAt || unreadCount === 0) return;

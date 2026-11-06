@@ -27,6 +27,12 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNdjsonQuery } from '@/hooks/query';
+import {
+    type DataTableColumnDef,
+    dataTableFeatures,
+    type DataTableFeatures,
+    type DataTableRow,
+} from '@/lib/data-table';
 import type {
     QualifierSpec,
     SearchSchema,
@@ -34,20 +40,16 @@ import type {
 } from '@/lib/search-query/search-schema';
 import { createDashboardLink } from '@/utils/dashboard';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import {
     type Cell,
-    type ColumnDef,
+    type ColumnVisibilityState,
     type ExpandedState,
-    type Row,
     type RowSelectionState,
-    type VisibilityState,
-    getCoreRowModel,
-    getExpandedRowModel,
-    useReactTable,
+    useTable,
 } from '@tanstack/react-table';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -57,7 +59,6 @@ type RelationEntry = components['schemas']['EntryWithDepth'];
 interface RelationsProps {
     obj: {
         id?: number;
-        [key: string]: any;
     };
 }
 
@@ -72,25 +73,19 @@ function ExpandedRowContent({
 
     const isExpandable = result.id !== undefined && result.id !== srcId;
 
-    const { data: paths, isLoading } = useQuery({
-        queryKey: ['graph', 'paths', { src: String(srcId), dst: result.id }],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/knowledge-graph/paths/',
-                {
-                    params: {
-                        query: {
-                            src: srcId,
-                            dsts: [result.id!],
-                        },
-                    },
+    const { data: paths, isLoading } = $api.useQuery(
+        'get',
+        '/knowledge-graph/paths/',
+        {
+            params: {
+                query: {
+                    src: srcId,
+                    dsts: [result.id!],
                 },
-            );
-            if (error) throw { response, error };
-            return data;
+            },
         },
-        enabled: isExpandable,
-    });
+        { enabled: isExpandable },
+    );
 
     const pathSteps = useMemo(() => {
         if (!paths) return [];
@@ -100,9 +95,11 @@ function ExpandedRowContent({
             { id: number; name: string; subtype: string; color?: string }
         >();
 
-        const processEntries = (entryMap: any) => {
-            Object.entries(entryMap).forEach(([subtype, entries]: [string, any]) => {
-                entries.forEach((entry: any) => {
+        const processEntries = (
+            entryMap: components['schemas']['EntryListCompressedTree']['entities'],
+        ) => {
+            Object.entries(entryMap).forEach(([subtype, entries]) => {
+                entries.forEach((entry) => {
                     if (typeof entry === 'object' && entry !== null) {
                         nodes.set(entry.id, {
                             id: entry.id,
@@ -119,7 +116,7 @@ function ExpandedRowContent({
         processEntries(paths.entries.artifacts);
 
         const adj = new Map<number, number[]>();
-        paths.relations.forEach((rel: any) => {
+        paths.relations.forEach((rel) => {
             if (!adj.has(rel.src)) adj.set(rel.src, []);
             if (!adj.has(rel.dst)) adj.set(rel.dst, []);
             adj.get(rel.src)!.push(rel.dst);
@@ -295,7 +292,7 @@ export default function Relations({ obj }: RelationsProps) {
     const [pageSize, setPageSize] = useState(10);
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>({});
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const router = useRouter();
@@ -315,13 +312,12 @@ export default function Relations({ obj }: RelationsProps) {
 
     const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
-        queryKey: ['entry_classes', 'relations'],
         meta: { showErrorToast: true },
     });
 
     const entrySubtypes = useMemo(() => {
         const results = entryClasses ?? [];
-        return results.map((c: any) => c.subtype as string);
+        return results.map((c) => c.subtype);
     }, [entryClasses]);
 
     const searchSchema = useMemo<SearchSchema>(
@@ -350,41 +346,23 @@ export default function Relations({ obj }: RelationsProps) {
         return { q: appliedSearch || undefined, values, dates: {} };
     }, [appliedSearch, types, depthValue]);
 
-    const { data: neighbors, isLoading } = useQuery({
-        queryKey: [
-            'graph',
-            'neighbors',
-            {
-                src: obj.id!,
-                depth,
-                page,
-                pageSize,
-                query: appliedSearch,
-                subtype: types,
-            },
-        ],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/knowledge-graph/neighbors/',
-                {
-                    params: {
-                        query: {
-                            src: obj.id!,
-                            depth,
-                            page,
-                            page_size: pageSize,
-                            ...(types.length > 0 ? { subtype: types } : {}),
-                            ...(appliedSearch ? { search: appliedSearch } : {}),
-                        },
-                    },
+    const { data: neighbors, isLoading } = $api.useQuery(
+        'get',
+        '/knowledge-graph/neighbors/',
+        {
+            params: {
+                query: {
+                    src: obj.id!,
+                    depth,
+                    page,
+                    page_size: pageSize,
+                    ...(types.length > 0 ? { subtype: types } : {}),
+                    ...(appliedSearch ? { search: appliedSearch } : {}),
                 },
-            );
-            if (error) throw { response, error };
-            return data;
+            },
         },
-        enabled: !!obj.id,
-        meta: { showErrorToast: true },
-    });
+        { enabled: !!obj.id, meta: { showErrorToast: true } },
+    );
 
     const hasNextPage = neighbors?.has_next ?? false;
 
@@ -393,36 +371,24 @@ export default function Relations({ obj }: RelationsProps) {
         return neighbors.results ?? [];
     }, [neighbors]);
 
-    const { data: inaccessibleIds = [] } = useQuery({
-        queryKey: [
-            'graph',
-            'inaccessible',
-            {
-                src: obj.id!,
-                depth,
-            },
-        ],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/knowledge-graph/inaccessible/',
-                {
-                    params: {
-                        query: {
-                            src: obj.id!,
-                            depth,
-                        },
-                    },
+    const { data: inaccessibleIds = [] } = $api.useQuery(
+        'get',
+        '/knowledge-graph/inaccessible/',
+        {
+            params: {
+                query: {
+                    src: obj.id!,
+                    depth,
                 },
-            );
-            if (error) throw { response, error };
-            return data;
+            },
         },
-        enabled: !!obj.id && depth > 0,
-        meta: { suppressNotification: true },
-        select: (response) => response?.inaccessible_ids ?? [],
-    });
+        {
+            enabled: !!obj.id && depth > 0,
+            meta: { suppressNotification: true },
+            select: (response) => response?.inaccessible_ids ?? [],
+        },
+    );
 
-    // A request was sent for this entry and depth; another one may have different inaccessible entities.
     const { reset: resetRequestAccess } = requestAccess;
     useEffect(() => resetRequestAccess(), [obj.id, depth, resetRequestAccess]);
 
@@ -437,7 +403,7 @@ export default function Relations({ obj }: RelationsProps) {
 
     const totalPages = hasNextPage ? page + 1 : page;
 
-    const columns = useMemo<ColumnDef<RelationEntry>[]>(
+    const columns = useMemo<DataTableColumnDef<RelationEntry>[]>(
         () => [
             {
                 id: 'select',
@@ -534,7 +500,8 @@ export default function Relations({ obj }: RelationsProps) {
         [obj.id],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: results,
         columns,
         state: {
@@ -551,6 +518,7 @@ export default function Relations({ obj }: RelationsProps) {
         onRowSelectionChange: setRowSelection,
         onColumnVisibilityChange: setColumnVisibility,
         onExpandedChange: setExpanded,
+        autoResetExpanded: false,
         onPaginationChange: (updater) => {
             const current = { pageIndex: page - 1, pageSize };
             const next = typeof updater === 'function' ? updater(current) : updater;
@@ -561,8 +529,6 @@ export default function Relations({ obj }: RelationsProps) {
                 setPage(next.pageIndex + 1);
             }
         },
-        getCoreRowModel: getCoreRowModel(),
-        getExpandedRowModel: getExpandedRowModel(),
         manualPagination: true,
         pageCount: totalPages,
         enableRowSelection: true,
@@ -598,7 +564,7 @@ export default function Relations({ obj }: RelationsProps) {
     }, [table]);
 
     const toggleRow = useCallback(
-        (row: Row<RelationEntry>) => {
+        (row: DataTableRow<RelationEntry>) => {
             const result = row.original;
             const isSameEntry = result.id !== undefined && result.id === obj.id;
             const isExpandable = !isSameEntry && result.id !== undefined;
@@ -608,7 +574,7 @@ export default function Relations({ obj }: RelationsProps) {
     );
 
     const getRowClassName = useCallback(
-        (row: Row<RelationEntry>) => {
+        (row: DataTableRow<RelationEntry>) => {
             const result = row.original;
             const isSameEntry = result.id !== undefined && result.id === obj.id;
             const isExpandable = !isSameEntry && result.id !== undefined;
@@ -618,7 +584,7 @@ export default function Relations({ obj }: RelationsProps) {
     );
 
     const getCellProps = useCallback(
-        (cell: Cell<RelationEntry, unknown>) => {
+        (cell: Cell<DataTableFeatures, RelationEntry, unknown>) => {
             if (cell.column.id === 'select' || cell.column.id === 'expand') {
                 return undefined;
             }
@@ -639,7 +605,7 @@ export default function Relations({ obj }: RelationsProps) {
     );
 
     const renderSubRow = useCallback(
-        (row: Row<RelationEntry>) => (
+        (row: DataTableRow<RelationEntry>) => (
             <ExpandedRowContent srcId={obj.id!} result={row.original} />
         ),
         [obj.id],

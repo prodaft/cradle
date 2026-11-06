@@ -212,6 +212,14 @@ class EssentialUserRetrieveSerializer(serializers.ModelSerializer):
         fields = ["id", "username"]
 
 
+class OAuthConnectResponseSerializer(serializers.Serializer):
+    """Result of linking an OAuth provider to the current user."""
+
+    provider = serializers.CharField(help_text="OAuth provider ID that was linked")
+    connected = serializers.BooleanField(help_text="Always true on success")
+    connected_at = serializers.DateTimeField(help_text="When the link was made")
+
+
 class OAuthConnectSerializer(serializers.Serializer):
     """Serializer for OAuth connect/login. Validates redirect_uri against whitelist."""
 

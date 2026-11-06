@@ -18,9 +18,10 @@ import { Switch } from '@/components/ui/switch';
 import { SelectOption } from '@/types/models';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {} from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import { fetchNdjson } from '@services/openapi/ndjson-stream';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import startCase from 'lodash/startCase';
 import { useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -33,6 +34,8 @@ interface EnrichmentSettingsFormProps {
 }
 
 type EclassOption = SelectOption<string>;
+type PatchedEnrichmentSettingsRequest =
+    components['schemas']['PatchedEnrichmentSettingsRequest'];
 
 interface FormField {
     type: 'string' | 'number' | 'choice' | 'options' | 'boolean' | 'url';
@@ -119,7 +122,7 @@ export default function EnrichmentSettingsForm({
     });
 
     const saveSettings = useMutation({
-        mutationFn: async (formatted_data: any) => {
+        mutationFn: async (formatted_data: PatchedEnrichmentSettingsRequest) => {
             const { error, response } = await fetchClient.PATCH(
                 '/intelio/enrichers/{enricher_type}/',
                 {
@@ -162,42 +165,42 @@ export default function EnrichmentSettingsForm({
         }
     };
 
-    const { data: enrichmentSettings, isLoading } = useQuery({
-        queryKey: ['enrichment', 'settings', enrichment_class],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrichers/{enricher_type}/',
-                {
-                    params: { path: { enricher_type: enrichment_class } },
-                },
-            );
-            if (error) throw { response, error };
-            return data;
+    const { data: enrichmentSettings, isLoading } = $api.useQuery(
+        'get',
+        '/intelio/enrichers/{enricher_type}/',
+        {
+            params: { path: { enricher_type: enrichment_class } },
         },
-        enabled: !!enrichment_class,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+        {
+            enabled: !!enrichment_class,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-    });
+    );
 
     useEffect(() => {
         if (enrichmentSettings) {
-            const sd = enrichmentSettings as any;
-            const formFields = sd.form_fields ?? sd.formFields ?? {};
+            const sd = enrichmentSettings;
+            const formFields = (sd.form_fields ?? {}) as FormFields;
+            const savedSettings = (sd.settings ?? {}) as Record<
+                string,
+                string | number | boolean | undefined
+            >;
             setValidationSchema(createEnrichmentSchema(formFields));
 
             const initialSettings: Record<string, string | number | boolean> = {};
-            Object.entries(formFields).forEach(([key, field]: [string, any]) => {
+            Object.entries(formFields).forEach(([key, field]) => {
                 if (field.type === 'boolean') {
-                    initialSettings[key] = sd.settings?.[key] ?? false;
+                    initialSettings[key] = savedSettings[key] ?? false;
                 } else {
-                    initialSettings[key] = sd.settings?.[key] ?? '';
+                    initialSettings[key] = savedSettings[key] ?? '';
                 }
             });
 
             const eclassesDetail = sd.for_eclasses ?? [];
-            const formattedEclasses = eclassesDetail.map((eclass: any) => ({
+            const formattedEclasses = eclassesDetail.map((eclass) => ({
                 value: eclass.subtype,
                 label: eclass.subtype,
             }));
@@ -218,9 +221,8 @@ export default function EnrichmentSettingsForm({
         }
     }, [enrichmentSettings, isLoading, enrichment_class]);
 
-    const sd = enrichmentSettings as any;
-    const displayName = sd?.display_name ?? sd?.displayName ?? '';
-    const formFields = sd?.form_fields ?? sd?.formFields ?? {};
+    const displayName = enrichmentSettings?.display_name ?? '';
+    const formFields = (enrichmentSettings?.form_fields ?? {}) as FormFields;
 
     const onSubmit = async (
         values: z.infer<ReturnType<typeof createEnrichmentSchema>>,
@@ -234,7 +236,7 @@ export default function EnrichmentSettingsForm({
     };
 
     const renderSettingsFields = () => {
-        const entries = Object.entries(formFields) as [string, FormField][];
+        const entries = Object.entries(formFields);
         return entries.map(([key, field], index) => {
             const label = (
                 <>

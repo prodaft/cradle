@@ -22,17 +22,13 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import type { SearchState } from '@/lib/search-query/search-schema';
 import { truncateText } from '@/utils/dashboard';
 import { ArrowsClockwiseIcon, TrashIcon } from '@phosphor-icons/react';
 import type { components } from '@services/openapi/schema';
 import { useRouter } from '@tanstack/react-router';
-import {
-    type ColumnDef,
-    type RowSelectionState,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { type RowSelectionState, useTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import capitalize from 'lodash/capitalize';
 import { useCallback, useMemo, useState } from 'react';
@@ -146,7 +142,7 @@ export default function EnrichmentTable({
         );
     }, []);
 
-    const columns = useMemo<ColumnDef<EnrichmentRow>[]>(
+    const columns = useMemo<DataTableColumnDef<EnrichmentRow>[]>(
         () => [
             {
                 id: 'select',
@@ -252,7 +248,8 @@ export default function EnrichmentTable({
         setIsDeleteOpen(true);
     }, [checkedIds]);
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -272,7 +269,6 @@ export default function EnrichmentTable({
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
         enableSorting: false,

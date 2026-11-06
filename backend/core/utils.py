@@ -1,19 +1,14 @@
 """Shared utilities for model introspection and query parameter validation.
 
-Provides flatten, fields_to_form (Django model -> form schema), and
+Provides fields_to_form (Django model -> form schema) and
 validate_order_by for order_by query parameter validation.
 """
-
-import itertools
 
 from django.db import models
 
 from .exceptions import InvalidRequestException
 
-
-def flatten(items):
-    """Flatten an iterable of iterables into a single list. Thin wrapper over itertools.chain.from_iterable."""
-    return list(itertools.chain.from_iterable(items))
+FORM_FIELD_TYPES = ("string", "options", "number", "boolean", "url")
 
 
 def fields_to_form(fields):

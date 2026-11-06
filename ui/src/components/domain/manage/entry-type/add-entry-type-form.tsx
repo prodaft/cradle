@@ -103,7 +103,6 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
 
     const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
-        queryKey: ['entry_classes', 'add-entry-type'],
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });

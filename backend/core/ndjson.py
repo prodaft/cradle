@@ -8,6 +8,8 @@ from typing import Any
 
 from django.http import StreamingHttpResponse
 
+NDJSON_MEDIA_TYPE = "application/x-ndjson"
+
 
 def ndjson_streaming_response(rows: Iterator[dict[str, Any]]) -> StreamingHttpResponse:
     """Stream one JSON object per line (UTF-8), chunked.
@@ -23,7 +25,7 @@ def ndjson_streaming_response(rows: Iterator[dict[str, Any]]) -> StreamingHttpRe
         for row in rows:
             yield (json.dumps(row, default=str) + "\n").encode("utf-8")
 
-    response = StreamingHttpResponse(chunks(), content_type="application/x-ndjson")
+    response = StreamingHttpResponse(chunks(), content_type=NDJSON_MEDIA_TYPE)
     response["Cache-Control"] = "no-store"
     response["X-Accel-Buffering"] = "no"
     return response

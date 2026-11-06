@@ -40,15 +40,7 @@ function replaceDoubleUnderscoreWithSlash(str: string): string {
 /*==============================================================================
   INTERFACES
 ==============================================================================*/
-type LspEntryClass = {
-    type: string;
-    subtype: string;
-    description: string;
-    regex: string | null;
-    options: string | null;
-    color: string;
-    format: string | null;
-};
+type LspEntryClass = components['schemas']['LspEntryClass'];
 
 interface LintingSuggestion {
     from: number;
@@ -89,15 +81,17 @@ export class CradleEditor {
     /*---------------------------------------------------------------------------
     Static Properties (Cache for EntryClasses, Tries, and Snippets)
   ---------------------------------------------------------------------------*/
-    private static entryClassesPromise: Promise<any> | null = null;
+    private static entryClassesPromise: Promise<{
+        [key: string]: LspEntryClass;
+    }> | null = null;
     private static cachedEntryClasses: { [key: string]: LspEntryClass } | null = null;
 
-    private static triesPromise: Promise<any> | null = null;
+    private static triesPromise: Promise<{ [key: string]: DynamicTrie }> | null = null;
     private static cachedTries: { [key: string]: DynamicTrie } | null = null;
 
     private static cachedBigTrie: DynamicTrie | null = null;
 
-    private static snippetsPromise: Promise<any> | null = null;
+    private static snippetsPromise: Promise<Snippet[]> | null = null;
     private static cachedSnippets: Snippet[] | null = null;
 
     /*---------------------------------------------------------------------------
@@ -176,8 +170,7 @@ export class CradleEditor {
                         .GET('/lsp/types/')
                         .then(({ data, error, response }) => {
                             if (error) throw { response, error };
-                            const d = data as { types?: Record<string, unknown> };
-                            return (d?.types ?? d) as Record<string, unknown>;
+                            return data.types;
                         });
                 }
                 const entryClasses = await CradleEditor.entryClassesPromise;
@@ -283,7 +276,7 @@ export class CradleEditor {
                         .GET('/notes/snippets/')
                         .then(({ data, error, response }) => {
                             if (error) throw { response, error };
-                            return (data as Snippet[]) || [];
+                            return data || [];
                         });
                 }
                 const snippets = await CradleEditor.snippetsPromise;
@@ -341,7 +334,7 @@ export class CradleEditor {
             CradleEditor.invalidateSnippetsCache();
             const { data, error, response } = await fetchClient.GET('/notes/snippets/');
             if (error) throw { response, error };
-            const snippets = (data as Snippet[]) || [];
+            const snippets = data || [];
             this.snippets = snippets;
             CradleEditor.cachedSnippets = snippets;
             return snippets;

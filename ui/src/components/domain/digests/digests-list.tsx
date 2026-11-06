@@ -3,6 +3,7 @@ import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { queryKeys } from '@/hooks/query';
 import { dateRangeFromUrl, dayEndIso, dayStartIso } from '@/lib/search-query/dates';
 import {
     sortFromUrl,
@@ -11,9 +12,9 @@ import {
     type DateRange,
     type SearchState,
 } from '@/lib/search-query/search-schema';
-import { fetchClient } from '@services/openapi/client';
+import { $api } from '@services/openapi/client';
 import type { operations } from '@services/openapi/schema';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { FilePlus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -119,26 +120,24 @@ export default function DigestsList() {
         search.user,
     ]);
 
-    const { data: digests, isLoading } = useQuery({
-        queryKey: ['digests', listQuery],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/digests/',
-                { params: { query: listQuery } },
-            );
-            if (error) throw { response, error };
-            return data;
+    const { data: digests, isLoading } = $api.useQuery(
+        'get',
+        '/intelio/digests/',
+        { params: { query: listQuery } },
+        {
+            meta: {
+                showErrorToast: true,
+            },
         },
-        meta: {
-            showErrorToast: true,
-        },
-    });
+    );
 
     const rows = digests?.results ?? [];
     const totalPages = digests?.total_pages ?? 1;
 
     const invalidate = useCallback(() => {
-        queryClient.invalidateQueries({ queryKey: ['digests'] });
+        for (const queryKey of queryKeys.digests.all()) {
+            queryClient.invalidateQueries({ queryKey });
+        }
     }, [queryClient]);
 
     const goTo = (target: number) => {

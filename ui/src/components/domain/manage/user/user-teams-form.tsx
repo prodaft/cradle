@@ -9,32 +9,27 @@ import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
 import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import {
     EMPTY_SEARCH_STATE,
     FREE_TEXT_SCHEMA,
     type SearchState,
 } from '@/lib/search-query/search-schema';
 import {} from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import { type components } from '@services/openapi/schema';
-import {
-    type QueryKey,
-    useMutation,
-    useQuery,
-    useQueryClient,
-} from '@tanstack/react-query';
+import { type QueryKey, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useTable } from '@tanstack/react-table';
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 
 type Membership = 'none' | components['schemas']['TeamRoleEnum'];
 
-// Membership changes alter counts and the user's effective access.
 const INVALIDATE_ON_CHANGE: { queryKey: QueryKey }[] = [
-    { queryKey: queryKeys.teams.all },
-    { queryKey: ['get', '/entries/entities/{entity_id}/access/users/'] },
-    { queryKey: ['get', '/users/{user_id}/access/'] },
+    ...invalidate(...queryKeys.teams.all()),
+    { queryKey: queryKeys.access.entityUsers() },
+    { queryKey: queryKeys.access.users() },
 ];
 
 const MEMBERSHIP_OPTIONS: { value: Membership; label: string }[] = [
@@ -68,16 +63,8 @@ export default function UserTeamsForm({
         isPending: membershipsPending,
         isError: membershipsError,
         refetch: refetchMemberships,
-    } = useQuery({
-        queryKey: queryKeys.teams.user(userId),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/users/{user_id}/teams/',
-                { params: { path: { user_id: userId } } },
-            );
-            if (error) throw { response, error };
-            return data;
-        },
+    } = $api.useQuery('get', '/users/{user_id}/teams/', {
+        params: { path: { user_id: userId } },
     });
 
     const {
@@ -86,27 +73,20 @@ export default function UserTeamsForm({
         isFetching,
         isError: teamsError,
         refetch: refetchTeams,
-    } = useQuery({
-        queryKey: queryKeys.teams.list({
-            page: pagination.pageIndex + 1,
-            pageSize: pagination.pageSize,
-            search: appliedSearch,
-        }),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET('/teams/', {
-                params: {
-                    query: {
-                        page: pagination.pageIndex + 1,
-                        page_size: pagination.pageSize,
-                        ...(appliedSearch ? { search: appliedSearch } : {}),
-                    },
+    } = $api.useQuery(
+        'get',
+        '/teams/',
+        {
+            params: {
+                query: {
+                    page: pagination.pageIndex + 1,
+                    page_size: pagination.pageSize,
+                    ...(appliedSearch ? { search: appliedSearch } : {}),
                 },
-            });
-            if (error) throw { response, error };
-            return data;
+            },
         },
-        placeholderData: (previous) => previous,
-    });
+        { placeholderData: (previous) => previous },
+    );
 
     useLayoutEffect(() => {
         setEdits({});
@@ -186,8 +166,6 @@ export default function UserTeamsForm({
             invalidateQueries: INVALIDATE_ON_CHANGE,
         },
         onSuccess: () => setEdits({}),
-        // A partial failure leaves some changes applied: resync, and keep the
-        // edits that did not go through (applied ones now match the server).
         onError: () =>
             INVALIDATE_ON_CHANGE.forEach((target) =>
                 queryClient.invalidateQueries(target),
@@ -205,7 +183,7 @@ export default function UserTeamsForm({
         setAppliedSearch(state.q ?? '');
     }, []);
 
-    const columns = useMemo<ColumnDef<UserTeamRow>[]>(
+    const columns = useMemo<DataTableColumnDef<UserTeamRow>[]>(
         () => [
             {
                 accessorKey: 'teamId',
@@ -284,12 +262,12 @@ export default function UserTeamsForm({
         [membershipOf, updateMembership, readOnly, saveMemberships.isPending],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: teamRows,
         columns,
         state: { pagination },
         onPaginationChange: setPagination,
-        getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
         pageCount: Math.max(1, teamsPage?.total_pages ?? 1),
         rowCount: teamsPage?.count,

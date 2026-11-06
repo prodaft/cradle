@@ -7,7 +7,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
 import { getSuccessMessage } from '@/utils/api';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
@@ -27,7 +27,7 @@ export default function GraphSettingsForm() {
         meta: {
             invalidateQueries: [
                 { queryKey: queryKeys.notes.apiList() },
-                { queryKey: queryKeys.knowledgeGraph.all },
+                ...invalidate(...queryKeys.knowledgeGraph.all()),
             ],
             suppressNotification: true,
         },

@@ -26,18 +26,19 @@ import {
 import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuthState } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import {
     EMPTY_SEARCH_STATE,
     FREE_TEXT_SCHEMA,
     type SearchState,
 } from '@/lib/search-query/search-schema';
 import { PlusIcon, TrashIcon } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useTable } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Team = components['schemas']['Team'];
@@ -76,7 +77,9 @@ export default function TeamAccessForm({ team }: TeamAccessFormProps) {
 
     const handleEntityCreated = (entity: { id?: number }) => {
         setIsCreateOpen(false);
-        queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+        for (const queryKey of queryKeys.teams.all()) {
+            queryClient.invalidateQueries({ queryKey });
+        }
         queryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
         if (entity.id) {
             router.navigate({ to: `/manage/entities/${entity.id}` as any });
@@ -93,24 +96,14 @@ export default function TeamAccessForm({ team }: TeamAccessFormProps) {
         data: accessPage,
         isPending,
         isFetching,
-    } = useQuery({
-        queryKey: [...queryKeys.teams.access(team.id), pagination, appliedSearch],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/teams/{team_id}/access/',
-                {
-                    params: {
-                        path: { team_id: team.id },
-                        query: {
-                            page: pagination.pageIndex + 1,
-                            page_size: pagination.pageSize,
-                            ...(appliedSearch ? { search: appliedSearch } : {}),
-                        },
-                    },
-                },
-            );
-            if (error) throw { response, error };
-            return data;
+    } = $api.useQuery('get', '/teams/{team_id}/access/', {
+        params: {
+            path: { team_id: team.id },
+            query: {
+                page: pagination.pageIndex + 1,
+                page_size: pagination.pageSize,
+                ...(appliedSearch ? { search: appliedSearch } : {}),
+            },
         },
     });
 
@@ -150,9 +143,9 @@ export default function TeamAccessForm({ team }: TeamAccessFormProps) {
         meta: {
             successMessage: 'Team access updated',
             invalidateQueries: [
-                { queryKey: queryKeys.teams.all },
-                { queryKey: ['get', '/entries/entities/{entity_id}/access/users/'] },
-                { queryKey: ['get', '/users/{user_id}/access/'] },
+                ...invalidate(...queryKeys.teams.all()),
+                { queryKey: queryKeys.access.entityUsers() },
+                { queryKey: queryKeys.access.users() },
             ],
         },
     });
@@ -166,7 +159,7 @@ export default function TeamAccessForm({ team }: TeamAccessFormProps) {
         );
     };
 
-    const columns = useMemo<ColumnDef<TeamAccess>[]>(
+    const columns = useMemo<DataTableColumnDef<TeamAccess>[]>(
         () => [
             {
                 id: 'subtype',
@@ -259,12 +252,12 @@ export default function TeamAccessForm({ team }: TeamAccessFormProps) {
         [canManage, setAccess],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: accessPage?.results ?? [],
         columns,
         state: { pagination },
         onPaginationChange: setPagination,
-        getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
         pageCount: Math.max(1, accessPage?.total_pages ?? 1),
         rowCount: accessPage?.count,

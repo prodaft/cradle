@@ -27,20 +27,15 @@ from notifications.tasks import notify_user_task
 from user.authentication import CookieJWTAuthentication
 from user.permissions import HasAdminRole
 
-from .models import BaseSettingsSection, Setting
-from .serializers import ManagementActionResponseSerializer
-from .settings import system_settings
+from .models import Setting
+from .serializers import (
+    ManagementActionResponseSerializer,
+    SettingsUpdateResponseSerializer,
+    system_settings_serializer,
+)
+from .settings import settings_sections
 
 logger = logging.getLogger(__name__)
-
-
-def _settings_sections() -> list[BaseSettingsSection]:
-    """Return every settings section registered on ``system_settings``."""
-    return [
-        section
-        for name in dir(system_settings)
-        if not name.startswith("_") and isinstance(section := getattr(system_settings, name), BaseSettingsSection)
-    ]
 
 
 def _validate_setting(value, default) -> str | None:
@@ -68,7 +63,7 @@ class SettingsView(APIView):
         description="Returns all known settings in a nested JSON format, including defaults for any missing values.",
         responses={
             200: OpenApiResponse(
-                response=dict,
+                response=system_settings_serializer(partial=False),
                 description="Nested settings dictionary with defaults applied.",
             ),
             **get_common_error_responses(),
@@ -77,7 +72,7 @@ class SettingsView(APIView):
     def get(self, request: Request, *args, **kwargs) -> Response:
         result = {}
 
-        for section in _settings_sections():
+        for section in settings_sections():
             result[section.prefix] = {}
 
             for name, _ in inspect.getmembers(type(section), lambda m: isinstance(m, property)):
@@ -104,9 +99,12 @@ class SettingsView(APIView):
             "setting and every value must have that setting's type, or be null to reset it to its default; "
             "otherwise nothing is saved and the response lists the invalid fields."
         ),
-        request=dict,
+        request=system_settings_serializer(partial=True),
         responses={
-            200: OpenApiResponse(response=dict, description="Successfully updated all settings."),
+            200: OpenApiResponse(
+                response=SettingsUpdateResponseSerializer,
+                description="Successfully updated all settings.",
+            ),
             **get_error_responses(include_validation_error=True),
             **get_common_error_responses(),
         },
@@ -127,7 +125,7 @@ class SettingsView(APIView):
 
         defaults = {
             f"{section.prefix}.{key}": default
-            for section in _settings_sections()
+            for section in settings_sections()
             for key, default in section.defaults().items()
         }
         flat_settings = self._flatten_settings(request.data)

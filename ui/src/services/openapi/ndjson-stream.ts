@@ -5,20 +5,20 @@
 import { fetchClient } from './client';
 import type { paths } from './schema';
 
-type HttpMethod =
-    'get' | 'put' | 'post' | 'delete' | 'patch' | 'options' | 'head' | 'trace';
+const NDJSON_MEDIA_TYPE = 'application/x-ndjson';
 
-/** Paths whose OpenAPI object has a real GET operation (excludes ``get?: never`` stubs). */
-type PathsWithMethod<M extends HttpMethod> = {
-    [P in keyof paths]: M extends keyof paths[P]
-        ? paths[P][M] extends never | undefined
-            ? never
-            : P
+/** Paths whose GET documents a 200 ``application/x-ndjson`` body. */
+export type NdjsonPath = {
+    [P in keyof paths]: paths[P] extends {
+        get: { responses: { 200: { content: { [NDJSON_MEDIA_TYPE]: unknown } } } };
+    }
+        ? P
         : never;
 }[keyof paths];
 
-/** Any GET path accepted by ``openapi-fetch``; use only for NDJSON streams — runtime checks ``Content-Type``. */
-export type NdjsonPath = PathsWithMethod<'get'>;
+/** One NDJSON line of the stream at ``P``, as documented in the schema. */
+export type NdjsonRow<P extends NdjsonPath> =
+    paths[P]['get']['responses'][200]['content'][typeof NDJSON_MEDIA_TYPE];
 
 export type NdjsonGetParams<P extends NdjsonPath> = paths[P] extends {
     get: { parameters?: infer Params };
@@ -35,7 +35,7 @@ function assertNdjsonContentType(response: Response | undefined): void {
         return;
     }
     const mime = raw.split(';')[0]?.trim().toLowerCase() ?? '';
-    if (mime !== 'application/x-ndjson') {
+    if (mime !== NDJSON_MEDIA_TYPE) {
         throw new Error(
             `Expected NDJSON body (application/x-ndjson), got Content-Type: ${raw}`,
         );
@@ -112,12 +112,12 @@ async function getNdjsonList<T>(
  *
  * Mirrors TanStack's ``queryClient.fetchQuery``: one-shot fetch returning the full collected list.
  */
-export async function fetchNdjson<P extends NdjsonPath, T = any>(args: {
+export async function fetchNdjson<P extends NdjsonPath>(args: {
     path: P;
     params?: NdjsonGetParams<P>;
-}): Promise<T[]> {
+}): Promise<NdjsonRow<P>[]> {
     const { path, params } = args;
-    return getNdjsonList<T>(() =>
+    return getNdjsonList<NdjsonRow<P>>(() =>
         fetchClient.GET(path, {
             ...(params !== undefined ? { params } : {}),
             parseAs: 'stream',

@@ -38,6 +38,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import { FREE_TEXT_SCHEMA, type SearchState } from '@/lib/search-query/search-schema';
 import {
     ClockCounterClockwiseIcon,
@@ -48,19 +49,13 @@ import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import {
-    type ColumnDef,
-    type RowSelectionState,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { type RowSelectionState, useTable } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import AddEntryTypeForm from './add-entry-type-form';
 
 type EntryClass = components['schemas']['EntryClass'];
-type EntryClassSerializerCount = components['schemas']['EntryClassSerializerCount'];
 
 interface EntryTypeRow {
     id: string;
@@ -121,7 +116,7 @@ export default function EntryTypesList() {
     );
 
     const rows = useMemo<EntryTypeRow[]>(() => {
-        const results = (entryClasses?.results ?? []) as EntryClassSerializerCount[];
+        const results = entryClasses?.results ?? [];
         return results.map((c) => ({
             id: c.subtype,
             subtype: c.subtype,
@@ -160,7 +155,7 @@ export default function EntryTypesList() {
         onSettled: () => {
             for (const queryKey of [
                 queryKeys.entryTypes.apiList(),
-                ['entry_classes'],
+                queryKeys.entryTypes.stream(),
                 ...queryKeys.entryLists(),
             ]) {
                 queryClient.invalidateQueries({ queryKey });
@@ -231,7 +226,7 @@ export default function EntryTypesList() {
         return String(count);
     }, []);
 
-    const columns = useMemo<ColumnDef<EntryTypeRow>[]>(
+    const columns = useMemo<DataTableColumnDef<EntryTypeRow>[]>(
         () => [
             {
                 id: 'select',
@@ -334,7 +329,8 @@ export default function EntryTypesList() {
         [countLabel, isAdmin, openSettings, confirmDelete],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -354,7 +350,6 @@ export default function EntryTypesList() {
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
         enableSorting: false,
         enableRowSelection: true,
         manualPagination: true,

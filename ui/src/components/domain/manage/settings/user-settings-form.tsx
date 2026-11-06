@@ -12,14 +12,17 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {} from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useId } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import * as z from 'zod';
+
+type SystemSettings = components['schemas']['SystemSettings'];
 
 interface UserSettingsFormProps {
     onAdd?: () => void;
@@ -39,16 +42,8 @@ const USER_SETTINGS_DEFAULTS: UserSettingsFormData = {
     requireAdminConfirmation: true,
 };
 
-interface UserSettingsApi {
-    users?: {
-        allow_registration?: boolean;
-        require_email_confirmation?: boolean;
-        require_admin_confirmation?: boolean;
-    };
-}
-
 function getUserSettingsFromApi(
-    settings: UserSettingsApi | null | undefined,
+    settings: SystemSettings | null | undefined,
 ): UserSettingsFormData | null {
     if (!settings?.users) return null;
     const u = settings.users;
@@ -72,21 +67,18 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         defaultValues: USER_SETTINGS_DEFAULTS,
     });
 
-    const { data: settings, isPending } = useQuery({
-        queryKey: queryKeys.management.settings(),
-        refetchOnWindowFocus: false,
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/management/settings/',
-            );
-            if (error) throw { response, error };
-            return data;
+    const { data: settings, isPending } = $api.useQuery(
+        'get',
+        '/management/settings/',
+        undefined,
+        {
+            refetchOnWindowFocus: false,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
-        },
-    });
+    );
 
     const saveSettings = useMutation({
         mutationFn: async (values: UserSettingsFormData) => {
@@ -105,7 +97,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.management.settings() }],
+            invalidateQueries: invalidate(queryKeys.management.settings()),
             successMessage: 'Account settings updated successfully!',
         },
         onSuccess: (_, variables) => {

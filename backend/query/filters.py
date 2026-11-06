@@ -2,27 +2,38 @@
 
 import django_filters
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema_field
 
 from core.query_lang import search_q
+from entries.enums import EntryType
 from entries.models import Entry
 from notes.models import Note
+
+
+@extend_schema_field({"type": "array", "items": {"type": "string"}})
+class RepeatableCharFilter(django_filters.CharFilter):
+    """Char filter documented as a repeatable query parameter (?key=a&key=b); the method reads every value."""
 
 
 class EntryFilter(django_filters.FilterSet):
     """FilterSet for Entry list query (type, subtype, name, search, referenced_in)."""
 
-    type = django_filters.CharFilter(
-        field_name="entry_class__type", lookup_expr="exact", help_text="Filter by entry class type (exact match)"
+    type = extend_schema_field({"type": "string", "enum": list(EntryType.values)})(
+        django_filters.CharFilter(
+            field_name="entry_class__type",
+            lookup_expr="exact",
+            help_text="Filter by entry class type (exact match)",
+        )
     )
-    subtype = django_filters.CharFilter(
+    subtype = RepeatableCharFilter(
         method="filter_subtype",
         help_text="Filter by entry class subtype (repeat for multiple: ?subtype=a&subtype=b)",
     )
-    name = django_filters.CharFilter(
+    name = RepeatableCharFilter(
         method="filter_name",
         help_text="Filter by entry name, case-insensitive contains (repeat for multiple: ?name=a&name=b)",
     )
-    name_exact = django_filters.CharFilter(
+    name_exact = RepeatableCharFilter(
         method="filter_name_exact",
         help_text="Filter by exact entry name (repeat for multiple: ?name_exact=a&name_exact=b)",
     )

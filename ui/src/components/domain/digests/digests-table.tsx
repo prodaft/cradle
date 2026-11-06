@@ -21,18 +21,14 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { dataTableFeatures, type DataTableColumnDef } from '@/lib/data-table';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { TrashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useRouter } from '@tanstack/react-router';
-import {
-    getCoreRowModel,
-    useReactTable,
-    type ColumnDef,
-    type RowSelectionState,
-} from '@tanstack/react-table';
+import { useTable, type RowSelectionState } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
@@ -140,7 +136,7 @@ export default function DigestsTable({
         );
     }, []);
 
-    const columns = useMemo<ColumnDef<DigestRow>[]>(
+    const columns = useMemo<DataTableColumnDef<DigestRow>[]>(
         () => [
             {
                 id: 'select',
@@ -314,7 +310,8 @@ export default function DigestsTable({
         ],
         [statusIcon],
     );
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -334,7 +331,6 @@ export default function DigestsTable({
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
         enableSorting: false,

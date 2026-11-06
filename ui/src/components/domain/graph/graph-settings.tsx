@@ -1,13 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Field, FieldContent, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { InfoIcon } from '@phosphor-icons/react';
-import { ChangeEvent } from 'react';
 
 interface GraphConfig {
     nodeRadiusCoefficient: number;
@@ -22,8 +20,6 @@ interface GraphConfig {
     simulationLinkDistance: number;
     simulationFriction: number;
     simulationCluster: number;
-    simulationDecay: number;
-    randomSeed?: string | number;
 }
 
 const PRESET: Partial<GraphConfig> = {
@@ -33,7 +29,6 @@ const PRESET: Partial<GraphConfig> = {
     simulationLinkSpring: 0.6,
     simulationLinkDistance: 16,
     simulationFriction: 0.75,
-    simulationDecay: 10000,
 };
 
 /** Base UI passes a bare number for single-thumb pointer changes even when `value` is an array. */
@@ -99,15 +94,6 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
             max: 1,
             step: 0.01,
             key: 'simulationFriction' as keyof GraphConfig,
-        },
-        {
-            label: 'Decay',
-            description: 'How long the layout runs before it stops (ms)',
-            value: config.simulationDecay,
-            min: 1000,
-            max: 15000,
-            step: 250,
-            key: 'simulationDecay' as keyof GraphConfig,
         },
     ];
 
@@ -302,46 +288,6 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                 <TabsContent value='advanced' className='mt-3'>
                     <ScrollArea className='max-h-[50vh]'>
                         <FieldGroup className='gap-4'>
-                            {/* Random Seed */}
-                            <Field>
-                                <div className='flex items-center gap-1 mb-1.5'>
-                                    <FieldLabel className='text-xs'>
-                                        Random Seed
-                                    </FieldLabel>
-                                    <Tooltip>
-                                        <TooltipTrigger
-                                            render={
-                                                <InfoIcon
-                                                    className='size-3 text-muted-foreground cursor-help'
-                                                    weight='bold'
-                                                />
-                                            }
-                                        />
-                                        <TooltipContent side='right'>
-                                            <p className='text-xs'>
-                                                Set a seed for consistent layouts
-                                            </p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </div>
-                                <Input
-                                    type='text'
-                                    value={config.randomSeed ?? ''}
-                                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                                        setConfig((prev) => ({
-                                            ...prev,
-                                            randomSeed:
-                                                e.target.value === ''
-                                                    ? undefined
-                                                    : isNaN(Number(e.target.value))
-                                                      ? e.target.value
-                                                      : Number(e.target.value),
-                                        }))
-                                    }
-                                    placeholder='42 or "my-seed"'
-                                />
-                            </Field>
-
                             {/* Cluster Separation */}
                             <Field>
                                 <div className='flex items-center justify-between w-full mb-1'>

@@ -5,6 +5,7 @@ import datetime
 from django.db.models import prefetch_related_objects
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -67,14 +68,14 @@ def _validate_depth(value: str | None, default: int) -> int:
         ),
         OpenApiParameter(
             name="last_seen_at_gte",
-            type=str,
+            type=OpenApiTypes.DATETIME,
             location=OpenApiParameter.QUERY,
             description="Only use edges whose newest relation was created at or after this time (ISO datetime format)",
             required=False,
         ),
         OpenApiParameter(
             name="created_at_lte",
-            type=str,
+            type=OpenApiTypes.DATETIME,
             location=OpenApiParameter.QUERY,
             description="Only use relations created at or before this time (ISO datetime format)",
             required=False,

@@ -39,6 +39,11 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import {
+    type DataTableColumnDef,
+    dataTableFeatures,
+    type DataTableFeatures,
+} from '@/lib/data-table';
 import { dayEndIso, dayStartIso } from '@/lib/search-query/dates';
 import type { SearchState } from '@/lib/search-query/search-schema';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
@@ -60,17 +65,14 @@ import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
     type CellContext,
-    ColumnDef,
-    type RowSelectionState,
     flexRender,
-    getCoreRowModel,
-    useReactTable,
+    type RowSelectionState,
+    useTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import startCase from 'lodash/startCase';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import type { StatusSlug } from './note-list-status';
 import { NotePreviewContent } from './note-preview-content';
 import {
     NOTES_SEARCH_SCHEMA,
@@ -234,7 +236,7 @@ export default function NotesTable({
 
         const statuses = (scope.status ?? []).filter(
             (slug) => !hideFleetingNotes || slug !== 'fleeting',
-        ) as StatusSlug[];
+        );
         const apiStatus: ListQuery['status'] | undefined = statuses.length
             ? statuses
             : hideFleetingNotes
@@ -436,7 +438,7 @@ export default function NotesTable({
         return <NotePreviewContent note={item} />;
     }, []);
 
-    const columns = useMemo<ColumnDef<NoteRow>[]>(
+    const columns = useMemo<DataTableColumnDef<NoteRow>[]>(
         () => [
             {
                 id: 'select',
@@ -687,13 +689,13 @@ export default function NotesTable({
                                                 setEnrichNotes([
                                                     {
                                                         id: String(item.id),
-                                                        title: ((
-                                                            item.metadata as NoteMetadata
-                                                        )?.title ||
+                                                        title:
+                                                            (
+                                                                item.metadata as NoteMetadata
+                                                            )?.title ||
                                                             item.title ||
-                                                            'Untitled') as string,
-                                                        entities: (item.entities ||
-                                                            []) as OptimizedEntryResponse[],
+                                                            'Untitled',
+                                                        entities: item.entities || [],
                                                     },
                                                 ]);
                                                 setIsEnrichOpen(true);
@@ -732,17 +734,20 @@ export default function NotesTable({
         ],
     );
 
-    const tableColumns = useMemo<ColumnDef<NoteListItem>[]>(
+    const tableColumns = useMemo<DataTableColumnDef<NoteListItem>[]>(
         () =>
             columns.map((column) => ({
-                ...(column as unknown as ColumnDef<NoteListItem>),
-                cell: (context: CellContext<NoteListItem, unknown>) => {
+                ...(column as unknown as DataTableColumnDef<NoteListItem>),
+                cell: (
+                    context: CellContext<DataTableFeatures, NoteListItem, unknown>,
+                ) => {
                     const columnId = column.id ?? '';
                     if (
                         context.row.original.accessible ||
                         RESTRICTED_VISIBLE_COLUMNS.has(columnId)
                     ) {
                         const noteContext = context as unknown as CellContext<
+                            DataTableFeatures,
                             NoteRow,
                             unknown
                         >;
@@ -763,7 +768,8 @@ export default function NotesTable({
         [columns],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns: tableColumns,
         state: {
@@ -773,7 +779,8 @@ export default function NotesTable({
                 pageSize,
             },
             columnPinning: {
-                right: ['actions'],
+                start: [],
+                end: ['actions'],
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
@@ -786,7 +793,6 @@ export default function NotesTable({
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
         enableRowSelection: (row) => row.original.accessible,
         manualPagination: true,
         enableSorting: false,
@@ -826,10 +832,11 @@ export default function NotesTable({
             const item = noteById.get(id);
             return {
                 id,
-                title: ((item?.metadata as NoteMetadata)?.title ||
+                title:
+                    (item?.metadata as NoteMetadata)?.title ||
                     item?.title ||
-                    'Untitled') as string,
-                entities: (item?.entities || []) as OptimizedEntryResponse[],
+                    'Untitled',
+                entities: item?.entities || [],
             };
         });
         setEnrichNotes(items);

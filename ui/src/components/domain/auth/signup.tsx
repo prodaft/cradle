@@ -158,23 +158,10 @@ export default function Signup() {
         meta: {
             suppressNotification: true,
         },
-        select: (raw) => {
-            const config = raw as Record<string, unknown>;
-            const oauthMethods =
-                (config.oauthMethods as unknown[]) ??
-                (config.oauth_methods as unknown[]) ??
-                [];
-            const signup =
-                (config.signup as boolean | undefined) ??
-                (config.registration_enabled as boolean | undefined);
-
-            return {
-                oauthMethods: (Array.isArray(oauthMethods)
-                    ? oauthMethods
-                    : []) as OAuthMethod[],
-                signup: signup ?? true,
-            };
-        },
+        select: (config) => ({
+            oauthMethods: config.oauth_methods as OAuthMethod[],
+            signup: config.signup,
+        }),
     });
 
     const oauthMethods = authConfig?.oauthMethods || [];

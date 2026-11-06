@@ -33,8 +33,6 @@ interface GraphConfig {
     simulationLinkDistance: number;
     simulationFriction: number;
     simulationCluster: number;
-    simulationDecay: number;
-    randomSeed?: string | number;
 }
 
 interface FetchProgress {
@@ -80,8 +78,6 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         simulationLinkDistance: 16,
         simulationFriction: 0.75,
         simulationCluster: 0.1,
-        simulationDecay: 10000,
-        randomSeed: 42,
     });
     const [selectedNodes, setSelectedNodes] = useState<Set<Node>>(new Set());
     const [activePanel, setActivePanel] = useState<

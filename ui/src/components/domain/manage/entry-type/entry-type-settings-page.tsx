@@ -180,7 +180,8 @@ export default function EntryTypeSettingsPage() {
                                                             queryKeys.entryTypes.apiList(),
                                                     });
                                                     queryClient.invalidateQueries({
-                                                        queryKey: ['entry_classes'],
+                                                        queryKey:
+                                                            queryKeys.entryTypes.stream(),
                                                     });
                                                     queryClient.invalidateQueries({
                                                         queryKey:

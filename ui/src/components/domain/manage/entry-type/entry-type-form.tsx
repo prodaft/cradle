@@ -196,7 +196,6 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         isPaused: isClassesPaused,
     } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
-        queryKey: ['entry_classes', 'entry-type-form'],
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
@@ -236,7 +235,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             successMessage: 'Entry type updated successfully!',
             invalidateQueries: [
                 { queryKey: queryKeys.entryTypes.apiList() },
-                { queryKey: ['entry_classes'] },
+                { queryKey: queryKeys.entryTypes.stream() },
                 ...(id ? [{ queryKey: queryKeys.entryTypes.apiDetail(id) }] : []),
                 ...queryKeys.entryLists().map((queryKey) => ({ queryKey })),
             ],
@@ -258,7 +257,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             successMessage: 'Entry type deleted successfully',
             invalidateQueries: [
                 { queryKey: queryKeys.entryTypes.apiList() },
-                { queryKey: ['entry_classes'] },
+                { queryKey: queryKeys.entryTypes.stream() },
                 ...queryKeys.entryLists().map((queryKey) => ({ queryKey })),
             ],
         },

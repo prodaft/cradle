@@ -248,8 +248,8 @@ const dashboardRoute = createRoute({
             const { data, error } = await fetchClient.GET('/query/', {
                 params: {
                     query: {
-                        subtype,
-                        name_exact: name,
+                        subtype: [subtype],
+                        name_exact: [name],
                     },
                 },
             });

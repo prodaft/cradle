@@ -424,7 +424,7 @@ export default function NoteViewer() {
         },
     );
 
-    const isRestricted = (noteError as { status?: number } | null)?.status === 403;
+    const isRestricted = noteError?.status === 403;
 
     const dockPanelTab = useMemo((): DockPanelTabMetadata => {
         if (isError) {

@@ -20,6 +20,7 @@ import { queryKeys } from '@/hooks/query';
 import { USER_ROLE_OPTIONS } from '@/utils/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { $api, fetchClient } from '@services/openapi/client';
+import { type components, userRoleEnumValues } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -34,12 +35,13 @@ const schema = z.object({
     id: z.string().optional(),
     username: z.string().min(1, { error: 'Username is required' }),
     email: z.email({ error: 'Invalid email' }).min(1, { error: 'Email is required' }),
-    role: z.string().min(1, { error: 'Role is required' }),
+    role: z.enum(userRoleEnumValues, { error: 'Role is required' }),
     emailConfirmed: z.boolean().optional(),
     isActive: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
+type PatchedUserUpdateRequest = components['schemas']['PatchedUserUpdateRequest'];
 
 export default function UserAccountForm({
     userId,
@@ -56,7 +58,13 @@ export default function UserAccountForm({
     );
 
     const updateUser = useMutation({
-        mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
+        mutationFn: async ({
+            userId,
+            payload,
+        }: {
+            userId: string;
+            payload: PatchedUserUpdateRequest;
+        }) => {
             const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userId } },
                 body: payload,
@@ -105,7 +113,7 @@ export default function UserAccountForm({
     const save = (values: FormData) => {
         if (!values.id) return;
 
-        const payload: any = {};
+        const payload: PatchedUserUpdateRequest = {};
         if (dirtyFields.username) payload.username = values.username;
         if (dirtyFields.email) payload.email = values.email;
         if (dirtyFields.role) payload.role = values.role;

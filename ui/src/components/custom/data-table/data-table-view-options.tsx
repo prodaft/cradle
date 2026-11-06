@@ -10,17 +10,17 @@ import {
     CommandList,
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import type { Table } from '@tanstack/react-table';
+import type { DataTableInstance } from '@/lib/data-table';
 import { Settings2 } from 'lucide-react';
 import * as React from 'react';
 
-interface DataTableViewOptionsProps<TData> extends React.ComponentProps<
+interface DataTableViewOptionsProps<TData extends object> extends React.ComponentProps<
     typeof PopoverContent
 > {
-    table: Table<TData>;
+    table: DataTableInstance<TData>;
 }
 
-export function DataTableViewOptions<TData>({
+export function DataTableViewOptions<TData extends object>({
     table,
     ...props
 }: DataTableViewOptionsProps<TData>) {

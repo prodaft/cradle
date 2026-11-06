@@ -46,9 +46,9 @@ export function useNotificationSocket(enabled: boolean): boolean {
         const invalidate = () => {
             clearTimeout(invalidateTimer);
             invalidateTimer = setTimeout(() => {
-                void queryClient.invalidateQueries({
-                    queryKey: queryKeys.notifications.all,
-                });
+                for (const queryKey of queryKeys.notifications.all()) {
+                    void queryClient.invalidateQueries({ queryKey });
+                }
             }, 200);
         };
 

@@ -61,7 +61,8 @@ function filterEdges<T extends Node, E extends EdgeRelation>(
 }
 
 /**
- * Filters both nodes and edges based on disabled types
+ * Filters both nodes and edges based on disabled types. When a type is hidden, nodes left without any link are
+ * hidden too.
  * @param nodes - All nodes in the graph
  * @param edges - All edges in the graph
  * @param disabledTypes - Set of disabled node types
@@ -74,9 +75,17 @@ export function filterGraph<T extends Node, E extends EdgeRelation>(
 ): { nodes: T[]; edges: E[] } {
     const filteredNodes = filterNodes(nodes, disabledTypes);
     const filteredEdges = filterEdges(edges, filteredNodes);
+    if (filteredNodes.length === nodes.length) {
+        return { nodes: filteredNodes, edges: filteredEdges };
+    }
 
+    const linked = new Set<string>();
+    for (const edge of filteredEdges) {
+        linked.add(String(edge.src));
+        linked.add(String(edge.dst));
+    }
     return {
-        nodes: filteredNodes,
+        nodes: filteredNodes.filter((node) => linked.has(node.id)),
         edges: filteredEdges,
     };
 }

@@ -1,5 +1,34 @@
 """Custom schema processors for DRF Spectacular OpenAPI generation."""
 
+import copy
+
+ERROR_RESPONSE_COMPONENT = "ErrorResponse"
+ERROR_CODE_COMPONENT = "ErrorCodeEnum"
+
+UNKNOWN_ERROR_CODE = "UNKNOWN_ERROR"
+
+PATH_PARAMETER_DESCRIPTIONS = {
+    "class_name": "Mapping class name, as listed by the mapping subclasses endpoint.",
+    "class_subtype": "Entry class subtype.",
+    "digest_id": "Digest ID.",
+    "enricher_type": "Enricher class name.",
+    "enrichment_id": "Enrichment request ID.",
+    "entity_id": "Entity ID.",
+    "entry_id": "Entry ID.",
+    "file_id": "File ID.",
+    "mapping_id": "Mapping ID.",
+    "note_id": "Note ID.",
+    "notification_id": "Notification ID.",
+    "provider": "OAuth provider name, as configured on the server.",
+    "relation_id": "Relation ID.",
+    "report_id": "Report ID.",
+    "session_id": "Session ID.",
+    "snippet_id": "Snippet ID.",
+    "team_id": "Team ID.",
+    "upload_id": "Upload ID.",
+    "user_id": "User ID.",
+}
+
 
 def _update_schema_refs(obj, mapping):
     """Recursively update $ref values according to mapping (old_name -> new_name)."""
@@ -20,6 +49,7 @@ def _update_schema_refs(obj, mapping):
 def schema_enum_values() -> dict[str, list[str]]:
     """Stable OpenAPI names for choice sets the UI imports as const arrays."""
     from access.enums import AccessType
+    from core.utils import FORM_FIELD_TYPES
     from entries.enums import EntryType, EntryTypeFormat, RelationReason
     from intelio.enums import DigestStatus, EnrichmentStatus
     from logs.enums import EventType
@@ -36,6 +66,7 @@ def schema_enum_values() -> dict[str, list[str]]:
         "EntryTypeEnum": list(EntryType.values),
         "EntryTypeFormatEnum": list(EntryTypeFormat.values),
         "EventTypeEnum": list(EventType.values),
+        "MappingFieldTypeEnum": list(FORM_FIELD_TYPES),
         "NoteListStatusEnum": list(NoteListStatus.values),
         "NoteStatusEnum": list(NoteStatus.values),
         "RelationReasonEnum": list(RelationReason.values),
@@ -176,4 +207,63 @@ def postprocess_schema_path_parameters(result, generator, request, public):
                 for param in operation["parameters"]
                 if param.get("in") != "path" or "{" + param.get("name", "") + "}" in path
             ]
+            for param in operation["parameters"]:
+                if param.get("in") == "path" and not param.get("description"):
+                    description = PATH_PARAMETER_DESCRIPTIONS.get(param.get("name", ""))
+                    if description:
+                        param["description"] = description
     return result
+
+
+def all_error_codes() -> list[str]:
+    """Every ``code`` an API error body can carry: all ErrorCode members plus the unknown fallback."""
+    from django.utils.module_loading import autodiscover_modules
+
+    from core.exceptions import ErrorCode
+
+    autodiscover_modules("exceptions")
+
+    codes: list[str] = []
+    pending = list(ErrorCode.__subclasses__())
+    while pending:
+        enum_class = pending.pop()
+        pending.extend(enum_class.__subclasses__())
+        codes.extend(member.name for member in enum_class)
+
+    duplicates = sorted({code for code in codes if codes.count(code) > 1})
+    if duplicates:
+        raise ValueError(f"Error codes must be unique across apps: {duplicates}")
+    return sorted([*codes, UNKNOWN_ERROR_CODE])
+
+
+def name_error_responses(result: dict, error_schema: dict, codes: list[str]) -> dict:
+    """Replace inline error bodies with a shared ErrorResponse component whose code is an enum."""
+    schemas = result.setdefault("components", {}).setdefault("schemas", {})
+    ref = {"$ref": f"#/components/schemas/{ERROR_RESPONSE_COMPONENT}"}
+
+    component = copy.deepcopy(error_schema)
+    code_schema = component["properties"]["code"]
+    schemas[ERROR_CODE_COMPONENT] = {
+        "type": "string",
+        "enum": list(codes),
+        "description": code_schema.get("description", ""),
+    }
+    component["properties"]["code"] = {"$ref": f"#/components/schemas/{ERROR_CODE_COMPONENT}"}
+    schemas[ERROR_RESPONSE_COMPONENT] = component
+
+    for operations in result.get("paths", {}).values():
+        for operation in operations.values():
+            if not isinstance(operation, dict):
+                continue
+            for response in operation.get("responses", {}).values():
+                for media in (response.get("content") or {}).values():
+                    if media.get("schema") == error_schema:
+                        media["schema"] = dict(ref)
+    return result
+
+
+def postprocess_schema_error_responses(result, generator, request, public):
+    """Expose the RFC 9457 error body as ErrorResponse with a typed ErrorCodeEnum ``code``."""
+    from core.constants import ERROR_RESPONSE_SCHEMA
+
+    return name_error_responses(result, ERROR_RESPONSE_SCHEMA, all_error_codes())

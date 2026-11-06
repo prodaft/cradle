@@ -5,11 +5,23 @@
  * All functions are explicit and require manual invocation.
  */
 
+import { SessionExpiredException } from '@services/openapi/auth-exceptions';
+import type { components } from '@services/openapi/schema';
+
+/** RFC 9457 error body, as documented for every API error response. */
+type ApiErrorBody = components['schemas']['ErrorResponse'];
+
+/** Every machine-readable `code` the backend can return. */
+type ApiErrorCode = components['schemas']['ErrorCodeEnum'];
+
+/** Codes produced on the client when there is no backend error body. */
+type ClientErrorCode = 'NETWORK_ERROR' | 'SESSION_EXPIRED';
+
 /**
  * Parsed API error structure
  */
 interface ParsedAPIError {
-    code: string;
+    code: ApiErrorCode | ClientErrorCode;
     detail: string;
     status: number;
     title: string;
@@ -18,118 +30,110 @@ interface ParsedAPIError {
     timestamp: string;
     isValidationError: boolean;
     fieldErrors: Record<string, string[]>;
-    raw: any;
+    raw: unknown;
 }
 
-/**
- * API error response structure.
- * DRF validation errors can be nested: {"field": {"nested": ["error"]}}
- */
-interface APIErrorResponse {
-    code?: string;
-    detail?: string;
-    status?: number;
-    title?: string;
-    type?: string;
-    instance?: string;
-    timestamp?: string;
-    errors?: Record<string, unknown>;
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object';
 }
 
-function isRfc9457Error(obj: unknown): obj is APIErrorResponse {
-    if (!obj || typeof obj !== 'object') return false;
-    const o = obj as Record<string, unknown>;
-    return (
-        !o.response &&
-        typeof (o.status ?? o.detail ?? o.code) !== 'undefined' &&
-        (typeof o.detail === 'string' || typeof o.code === 'string')
-    );
+function isErrorBody(value: unknown): value is Partial<ApiErrorBody> {
+    if (!isRecord(value) || 'response' in value) return false;
+    return typeof value.detail === 'string' || typeof value.code === 'string';
+}
+
+function isThrownApiError(
+    value: unknown,
+): value is { response: Response; error?: unknown } {
+    return isRecord(value) && value.response instanceof Response;
+}
+
+function fromBody(body: Partial<ApiErrorBody>, fallbackStatus: number): ParsedAPIError {
+    const code = body.code ?? 'UNKNOWN_ERROR';
+    return {
+        code,
+        detail: body.detail || 'An error occurred',
+        status: body.status ?? fallbackStatus,
+        title: body.title || 'Error',
+        type: body.type,
+        instance: body.instance || 'unknown',
+        timestamp: body.timestamp || new Date().toISOString(),
+        isValidationError: code === 'VALIDATION_ERROR',
+        fieldErrors: flattenFieldErrors(body.errors),
+        raw: body,
+    };
+}
+
+function clientError(
+    code: ClientErrorCode | 'UNKNOWN_ERROR',
+    title: string,
+    detail: string,
+    raw: unknown,
+): ParsedAPIError {
+    return {
+        code,
+        detail,
+        status: 0,
+        title,
+        instance: 'unknown',
+        timestamp: new Date().toISOString(),
+        isValidationError: false,
+        fieldErrors: {},
+        raw,
+    };
 }
 
 /**
  * Parse RFC 9457 error response into structured format
  *
- * @param error - Error object: { response, error? } from openapi-fetch throw,
- *   or the parsed body from openapi-react-query ($api.useMutation throws it directly)
+ * @param error - Whatever a query or mutation threw: `{ response, error }` from an openapi-fetch
+ *   call, the parsed body from openapi-react-query, or a client-side error
  * @returns Parsed error object
  */
-export async function parseAPIError(error: any): Promise<ParsedAPIError> {
-    // openapi-react-query throws the parsed body directly (no .response)
-    if (isRfc9457Error(error)) {
-        const data = error as APIErrorResponse;
-        return {
-            code: data.code || 'UNKNOWN_ERROR',
-            detail: data.detail || 'An error occurred',
-            status: data.status ?? 500,
-            title: data.title || 'Error',
-            type: data.type,
-            instance: data.instance || 'unknown',
-            timestamp: data.timestamp || new Date().toISOString(),
-            isValidationError: data.code === 'VALIDATION_ERROR',
-            fieldErrors: flattenFieldErrors(data.errors),
-            raw: data,
-        };
+export async function parseAPIError(error: unknown): Promise<ParsedAPIError> {
+    if (isErrorBody(error)) {
+        return fromBody(error, 500);
     }
 
-    // Network error (no response from server)
-    if (!error.response) {
+    if (!isThrownApiError(error)) {
+        if (error instanceof SessionExpiredException) {
+            return clientError(
+                'SESSION_EXPIRED',
+                'Session Expired',
+                error.message,
+                error,
+            );
+        }
         if (error instanceof TypeError) {
-            return {
-                code: 'NETWORK_ERROR',
-                detail: 'Unable to connect to the server. Please check your connection.',
-                status: 0,
-                title: 'Network Error',
-                instance: 'unknown',
-                timestamp: new Date().toISOString(),
-                isValidationError: false,
-                fieldErrors: {},
-                raw: error,
-            };
+            return clientError(
+                'NETWORK_ERROR',
+                'Network Error',
+                'Unable to connect to the server. Please check your connection.',
+                error,
+            );
         }
-        return {
-            code: 'UNKNOWN_ERROR',
-            detail: 'An unknown error occurred',
-            status: 0,
-            title: 'Unknown Error',
-            instance: 'unknown',
-            timestamp: new Date().toISOString(),
-            isValidationError: false,
-            fieldErrors: {},
-            raw: error,
-        };
+        return clientError(
+            'UNKNOWN_ERROR',
+            'Unknown Error',
+            'An unknown error occurred',
+            error,
+        );
     }
 
-    let data: APIErrorResponse = {
-        status: error.response?.status ?? 500,
-    };
-    // openapi-fetch returns pre-parsed body in error.error; use it when available
-    const preParsed = error.error;
-    if (preParsed && typeof preParsed === 'object') {
-        data = {
-            ...data,
-            ...preParsed,
-            status: preParsed.status ?? data.status,
-        };
-    } else {
-        try {
-            data = (await error.response.json()) || data;
-        } catch {
-            // Response body empty, not JSON, or already consumed by openapi-fetch
-        }
+    const { response } = error;
+    if (isRecord(error.error)) {
+        return fromBody(error.error as Partial<ApiErrorBody>, response.status);
     }
-
-    return {
-        code: data.code || 'UNKNOWN_ERROR',
-        detail: data.detail || 'An error occurred',
-        status: data.status ?? error.response?.status ?? 500,
-        title: data.title || 'Error',
-        type: data.type,
-        instance: data.instance || 'unknown',
-        timestamp: data.timestamp || new Date().toISOString(),
-        isValidationError: data.code === 'VALIDATION_ERROR',
-        fieldErrors: flattenFieldErrors(data.errors),
-        raw: data,
-    };
+    let body: unknown;
+    try {
+        body = await response.json();
+    } catch {
+        // Response body empty, not JSON, or already consumed by openapi-fetch
+    }
+    return fromBody(
+        isRecord(body) ? (body as Partial<ApiErrorBody>) : {},
+        response.status,
+    );
 }
 
 /** Flatten DRF nested validation errors to Record<string, string[]> */

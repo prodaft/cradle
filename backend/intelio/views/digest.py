@@ -5,6 +5,7 @@ import uuid
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from django_lifecycle.mixins import transaction
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -289,13 +290,13 @@ class DigestSubclassesAPIView(APIView):
                 name="created_at_gte",
                 description="Filter by creation date greater than or equal to (ISO datetime format)",
                 required=False,
-                type=str,
+                type=OpenApiTypes.DATETIME,
             ),
             OpenApiParameter(
                 name="created_at_lte",
                 description="Filter by creation date less than or equal to (ISO datetime format)",
                 required=False,
-                type=str,
+                type=OpenApiTypes.DATETIME,
             ),
             OpenApiParameter(
                 name="page_size",

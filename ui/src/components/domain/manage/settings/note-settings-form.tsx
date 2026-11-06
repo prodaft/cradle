@@ -18,16 +18,19 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
 import { getSuccessMessage } from '@/utils/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon, PlusIcon } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useId, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
+
+type SystemSettings = components['schemas']['SystemSettings'];
 
 const noteSettingsSchema = z.object({
     minEntries: z.coerce.number().min(1, { error: 'Must be at least 1' }),
@@ -45,17 +48,8 @@ const NOTE_SETTINGS_DEFAULTS: NoteSettingsFormData = {
     allowDynamicEntryClassCreation: false,
 };
 
-interface NoteSettingsApi {
-    notes?: {
-        min_entries?: number;
-        min_entities?: number;
-        max_clique_size?: number;
-        allow_dynamic_entry_class_creation?: boolean;
-    };
-}
-
 function getNoteSettingsFromApi(
-    settings: NoteSettingsApi | null | undefined,
+    settings: SystemSettings | null | undefined,
 ): NoteSettingsFormData | null {
     if (!settings?.notes) return null;
     const n = settings.notes;
@@ -81,18 +75,15 @@ export default function NoteSettingsForm() {
         defaultValues: NOTE_SETTINGS_DEFAULTS,
     });
 
-    const { data: settings, isPending } = useQuery({
-        queryKey: queryKeys.management.settings(),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/management/settings/',
-            );
-            if (error) throw { response, error };
-            return data;
+    const { data: settings, isPending } = $api.useQuery(
+        'get',
+        '/management/settings/',
+        undefined,
+        {
+            refetchOnWindowFocus: false,
+            meta: { showErrorToast: false, suppressNotification: true },
         },
-        refetchOnWindowFocus: false,
-        meta: { showErrorToast: false, suppressNotification: true },
-    });
+    );
 
     const saveSettings = useMutation({
         mutationFn: async (values: NoteSettingsFormData) => {
@@ -113,7 +104,7 @@ export default function NoteSettingsForm() {
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.management.settings() }],
+            invalidateQueries: invalidate(queryKeys.management.settings()),
             successMessage: 'Settings updated successfully!',
         },
         onSuccess: (_, variables) => {

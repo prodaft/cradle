@@ -10,16 +10,18 @@ import { ACCESS_OPTIONS } from '@/components/domain/manage/access-options';
 import { Button } from '@/components/ui/button';
 import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import {
     EMPTY_SEARCH_STATE,
     FREE_TEXT_SCHEMA,
     type SearchState,
 } from '@/lib/search-query/search-schema';
 import {} from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTable } from '@tanstack/react-table';
 import {
     useCallback,
     useEffect,
@@ -74,36 +76,21 @@ export default function UserPermissionsForm({
         isError,
         isSuccess,
         refetch,
-    } = useQuery({
-        queryKey: [
-            'get',
-            '/users/{user_id}/access/',
-            id,
-            pagination.pageIndex + 1,
-            pagination.pageSize,
-            appliedSearch,
-        ],
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/users/{user_id}/access/',
-                {
-                    params: {
-                        path: { user_id: id },
-                        query: {
-                            page: pagination.pageIndex + 1,
-                            page_size: pagination.pageSize,
-                            ...(appliedSearch ? { search: appliedSearch } : {}),
-                        },
-                    },
+    } = $api.useQuery(
+        'get',
+        '/users/{user_id}/access/',
+        {
+            params: {
+                path: { user_id: id },
+                query: {
+                    page: pagination.pageIndex + 1,
+                    page_size: pagination.pageSize,
+                    ...(appliedSearch ? { search: appliedSearch } : {}),
                 },
-            );
-            if (error) throw { response, error };
-            return data;
+            },
         },
-        enabled: !!id,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-    });
+        { enabled: !!id, refetchOnWindowFocus: false, refetchOnReconnect: false },
+    );
 
     const totalPages = Math.max(1, permissions?.total_pages ?? 1);
 
@@ -238,7 +225,7 @@ export default function UserPermissionsForm({
             setOriginalAccess(saved);
             setCurrentAccess(saved);
             queryClient.invalidateQueries({
-                queryKey: ['get', '/users/{user_id}/access/', id],
+                queryKey: queryKeys.access.users(id),
             });
         },
     });
@@ -263,7 +250,7 @@ export default function UserPermissionsForm({
         setAppliedSearch(state.q ?? '');
     }, []);
 
-    const columns = useMemo<ColumnDef<PermissionEntity>[]>(
+    const columns = useMemo<DataTableColumnDef<PermissionEntity>[]>(
         () => [
             {
                 accessorKey: 'id',
@@ -340,12 +327,12 @@ export default function UserPermissionsForm({
         [currentAccess, updateAccess, readOnly, savePermissions.isPending],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: entities,
         columns,
         state: { pagination },
         onPaginationChange: setPagination,
-        getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
         pageCount: totalPages,
         rowCount: permissions?.count,

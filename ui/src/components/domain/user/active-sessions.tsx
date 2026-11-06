@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useAuthActions } from '@/hooks/auth/use-auth';
+import { queryKeys } from '@/hooks/query';
+import { dataTableFeatures, type DataTableColumnDef } from '@/lib/data-table';
 import {
     EMPTY_SEARCH_STATE,
     sortToOrderBy,
@@ -36,12 +38,7 @@ import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import {
-    ColumnDef,
-    RowSelectionState,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { RowSelectionState, useTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -124,7 +121,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             return data;
         },
         meta: {
-            invalidateQueries: [{ queryKey: ['get', '/users/{user_id}/sessions/'] }],
+            invalidateQueries: [{ queryKey: queryKeys.users.sessions() }],
             suppressNotification: true,
         },
     });
@@ -261,7 +258,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         [page, pageSize, goTo, changePageSize],
     );
 
-    const columns = useMemo<ColumnDef<SessionRow>[]>(
+    const columns = useMemo<DataTableColumnDef<SessionRow>[]>(
         () => [
             {
                 id: 'select',
@@ -405,7 +402,8 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         [confirmRevoke, formatDate, formatDeviceInfo],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -422,7 +420,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
         enableSorting: false,

@@ -4,7 +4,7 @@ import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
 import {
     sortFromUrl,
     sortToOrderBy,
@@ -12,9 +12,9 @@ import {
     type SearchState,
 } from '@/lib/search-query/search-schema';
 import { cn } from '@/lib/utils';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import type { operations } from '@services/openapi/schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -128,20 +128,16 @@ export default function EnrichmentList({
         data: requestsPage,
         isLoading,
         isPaused,
-    } = useQuery({
-        queryKey: queryKeys.enrichment.requests.list(listQuery),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrichments/',
-                { params: { query: listQuery } },
-            );
-            if (error) throw { response, error };
-            return data;
+    } = $api.useQuery(
+        'get',
+        '/intelio/enrichments/',
+        { params: { query: listQuery } },
+        {
+            meta: {
+                showErrorToast: true,
+            },
         },
-        meta: {
-            showErrorToast: true,
-        },
-    });
+    );
 
     const rows = requestsPage?.results ?? [];
     const totalPages = requestsPage?.total_pages ?? 1;
@@ -194,7 +190,7 @@ export default function EnrichmentList({
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
+            invalidateQueries: invalidate(queryKeys.enrichment.requests.lists()),
         },
     });
 
@@ -208,7 +204,7 @@ export default function EnrichmentList({
             return data;
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
+            invalidateQueries: invalidate(queryKeys.enrichment.requests.lists()),
         },
     });
 

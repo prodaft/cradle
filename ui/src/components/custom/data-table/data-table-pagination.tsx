@@ -1,19 +1,21 @@
-import type { Table } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
 import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { DataTableInstance } from '@/lib/data-table';
 import { cn } from '@/lib/utils';
 
-interface DataTablePaginationProps<TData> extends React.ComponentProps<'div'> {
-    table: Table<TData>;
+interface DataTablePaginationProps<
+    TData extends object,
+> extends React.ComponentProps<'div'> {
+    table: DataTableInstance<TData>;
     pageSizeOptions?: number[];
     /** When true, all pagination controls are non-interactive. */
     disabled?: boolean;
 }
 
-export function DataTablePagination<TData>({
+export function DataTablePagination<TData extends object>({
     table,
     pageSizeOptions = [10, 20, 30, 40, 50],
     disabled = false,
@@ -21,7 +23,7 @@ export function DataTablePagination<TData>({
     ...props
 }: DataTablePaginationProps<TData>) {
     const selectedCount = table.getFilteredSelectedRowModel().rows.length;
-    const { pageIndex, pageSize } = table.getState().pagination;
+    const { pageIndex, pageSize } = table.state.pagination;
     // Only server-paginated tables that pass `rowCount` know their total.
     const totalRows = table.options.rowCount;
     let rangeLabel: string | null = null;

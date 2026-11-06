@@ -30,11 +30,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuthState } from '@/hooks/auth/use-auth';
-import { queryKeys, useNdjsonQuery } from '@/hooks/query';
+import { invalidate, queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -47,7 +47,6 @@ import * as z from 'zod';
 type Entity = components['schemas']['Entity'];
 type EntityRequest = components['schemas']['EntityRequest'];
 type Entry = components['schemas']['Entry'];
-type AdvancedQueryResponse = components['schemas']['AdvancedQueryPaginatedResponse'];
 
 interface EntityFormProps {
     id?: number | string | null;
@@ -108,7 +107,7 @@ function getEntityFormFromApi(
         subtype: entity.subtype || '',
         description: entity.description || '',
         isPublic: entity.is_public ?? false,
-        owningTeamId: (entity.team?.id as string | undefined) ?? NO_OWNER,
+        owningTeamId: entity.team?.id ?? NO_OWNER,
         aliases,
     };
 }
@@ -134,7 +133,7 @@ export default function EntityForm({ id = null }: EntityFormProps) {
                 },
             );
             if (error) throw { response, error };
-            const results = (data as AdvancedQueryResponse)?.results ?? [];
+            const results = data?.results ?? [];
             return results
                 .filter(
                     (alias): alias is typeof alias & { id: number } =>
@@ -182,16 +181,12 @@ export default function EntityForm({ id = null }: EntityFormProps) {
         meta: {
             successMessage: 'Owning team updated',
             invalidateQueries: [
-                { queryKey: queryKeys.teams.all },
+                ...invalidate(...queryKeys.teams.all()),
                 {
-                    queryKey: [
-                        'get',
-                        '/entries/entities/{entity_id}/access/users/',
-                        Number(id),
-                    ],
+                    queryKey: queryKeys.access.entityUsers(Number(id)),
                 },
-                { queryKey: ['get', '/entries/entities/{entity_id}/'] },
-                { queryKey: ['get', '/users/{user_id}/access/'] },
+                { queryKey: queryKeys.entities.details() },
+                { queryKey: queryKeys.access.users() },
             ],
         },
     });
@@ -211,17 +206,14 @@ export default function EntityForm({ id = null }: EntityFormProps) {
         onSuccess: () => router.navigate({ to: '/manage/entities' as any }),
     });
 
-    const { data: teamsPage } = useQuery({
-        queryKey: queryKeys.teams.list({ page: 1, pageSize: 200 }),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET('/teams/', {
-                params: { query: { page: 1, page_size: 200 } },
-            });
-            if (error) throw { response, error };
-            return data;
+    const { data: teamsPage } = $api.useQuery(
+        'get',
+        '/teams/',
+        {
+            params: { query: { page: 1, page_size: 200 } },
         },
-        enabled: isAdmin,
-    });
+        { enabled: isAdmin },
+    );
 
     const loadedValuesRef = useRef<EntityFormData | null>(null);
 
@@ -230,7 +222,6 @@ export default function EntityForm({ id = null }: EntityFormProps) {
         params: {
             query: { show_count: true },
         },
-        queryKey: ['entry_classes', 'entity-form', 'show_count'],
         refetchOnWindowFocus: false,
         meta: {
             showErrorToast: false,

@@ -37,6 +37,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import { FREE_TEXT_SCHEMA, type SearchState } from '@/lib/search-query/search-schema';
 import {
     ClockCounterClockwiseIcon,
@@ -44,16 +45,11 @@ import {
     TrashIcon,
     UsersThreeIcon,
 } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import {
-    type ColumnDef,
-    type RowSelectionState,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { type RowSelectionState, useTable } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -88,20 +84,13 @@ export default function TeamsList() {
         setRowSelection({});
     }, []);
 
-    const { data: teamsPage, isPending } = useQuery({
-        queryKey: queryKeys.teams.list({ page, pageSize, search: applied }),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET('/teams/', {
-                params: {
-                    query: {
-                        page,
-                        page_size: pageSize,
-                        ...(applied ? { search: applied } : {}),
-                    },
-                },
-            });
-            if (error) throw { response, error };
-            return data;
+    const { data: teamsPage, isPending } = $api.useQuery('get', '/teams/', {
+        params: {
+            query: {
+                page,
+                page_size: pageSize,
+                ...(applied ? { search: applied } : {}),
+            },
         },
     });
 
@@ -124,14 +113,12 @@ export default function TeamsList() {
                 `Successfully deleted ${teamIds.length} team${teamIds.length > 1 ? 's' : ''}`,
             );
         },
-        // Refresh even on failure: some teams may have been deleted before one failed.
-        // Deleting a team drops its grants and clears ownership of its entities.
         onSettled: () => {
             for (const queryKey of [
-                queryKeys.teams.all,
-                ['get', '/entries/entities/{entity_id}/access/users/'],
-                ['get', '/users/{user_id}/access/'],
-                ['get', '/entries/entities/{entity_id}/'],
+                ...queryKeys.teams.all(),
+                queryKeys.access.entityUsers(),
+                queryKeys.access.users(),
+                queryKeys.entities.details(),
             ]) {
                 queryClient.invalidateQueries({ queryKey });
             }
@@ -170,7 +157,7 @@ export default function TeamsList() {
         [applied],
     );
 
-    const columns = useMemo<ColumnDef<TeamRow>[]>(
+    const columns = useMemo<DataTableColumnDef<TeamRow>[]>(
         () => [
             ...(isAdmin
                 ? [
@@ -204,7 +191,7 @@ export default function TeamsList() {
                           ),
                           enableSorting: false,
                           enableHiding: false,
-                      } satisfies ColumnDef<TeamRow>,
+                      } satisfies DataTableColumnDef<TeamRow>,
                   ]
                 : []),
             {
@@ -287,7 +274,8 @@ export default function TeamsList() {
         [isAdmin, openSettings, confirmDelete],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: { rowSelection, pagination: { pageIndex: page - 1, pageSize } },
@@ -302,7 +290,6 @@ export default function TeamsList() {
                 navigateSearch({ teams_page: next.pageIndex + 1 });
             }
         },
-        getCoreRowModel: getCoreRowModel(),
         enableRowSelection: isAdmin,
         enableSorting: false,
         manualPagination: true,

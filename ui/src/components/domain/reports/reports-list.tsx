@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
+import { dataTableFeatures, type DataTableColumnDef } from '@/lib/data-table';
 import {
     sortFromUrl,
     sortToOrderBy,
@@ -47,16 +48,11 @@ import {
     DownloadIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import type { components, operations } from '@services/openapi/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import {
-    getCoreRowModel,
-    useReactTable,
-    type ColumnDef,
-    type RowSelectionState,
-} from '@tanstack/react-table';
+import { useTable, type RowSelectionState } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import startCase from 'lodash/startCase';
 import { useCallback, useMemo, useState } from 'react';
@@ -70,7 +66,7 @@ type ListQuery = NonNullable<operations['reports_list']['parameters']['query']>;
 
 const DEFAULT_ORDER_BY = '-created_at';
 
-const renderStatusIcon = (status?: string, errorMessage?: string) => {
+const renderStatusIcon = (status?: StatusType, errorMessage?: string) => {
     if (!status) return null;
 
     const tooltipContent = errorMessage || startCase(status);
@@ -87,7 +83,7 @@ const renderStatusIcon = (status?: string, errorMessage?: string) => {
                 <TooltipTrigger
                     render={<span className='inline-flex items-center flex-shrink-0' />}
                 >
-                    <StatusIcon status={status as StatusType} />
+                    <StatusIcon status={status} />
                 </TooltipTrigger>
                 <TooltipContent side='right' className={tooltipColorClass}>
                     {tooltipContent}
@@ -101,7 +97,7 @@ const renderStatusIcon = (status?: string, errorMessage?: string) => {
             <TooltipTrigger
                 render={<span className='inline-flex items-center flex-shrink-0' />}
             >
-                <StatusIcon status={status as StatusType} />
+                <StatusIcon status={status} />
             </TooltipTrigger>
             <TooltipContent side='right'>{tooltipContent}</TooltipContent>
         </Tooltip>
@@ -213,21 +209,12 @@ export default function ReportsList() {
         ) as ListQuery;
     }, [page, pageSize, orderBy, appliedSearch, statusFilter]);
 
-    const { data: reports, isLoading } = useQuery({
-        queryKey: queryKeys.reports.list(listQuery),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET('/reports/', {
-                params: {
-                    query: listQuery,
-                },
-            });
-            if (error) throw { response, error };
-            return data!;
-        },
-        meta: {
-            showErrorToast: true,
-        },
-    });
+    const { data: reports, isLoading } = $api.useQuery(
+        'get',
+        '/reports/',
+        { params: { query: listQuery } },
+        { meta: { showErrorToast: true } },
+    );
 
     const rows = reports?.results ?? [];
 
@@ -399,7 +386,7 @@ export default function ReportsList() {
         [fetchReport],
     );
 
-    const columns = useMemo<ColumnDef<ReportRow>[]>(
+    const columns = useMemo<DataTableColumnDef<ReportRow>[]>(
         () => [
             {
                 id: 'select',
@@ -565,7 +552,8 @@ export default function ReportsList() {
         [download, confirmDelete, retry],
     );
 
-    const table = useReactTable<ReportRow>({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -585,7 +573,6 @@ export default function ReportsList() {
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
         enableSorting: false,

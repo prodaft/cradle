@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import type { SearchState } from '@/lib/search-query/search-schema';
 import { cn } from '@/lib/utils';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
@@ -53,12 +54,7 @@ import { $api, fetchClient } from '@services/openapi/client';
 import type { components, operations } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import {
-    type ColumnDef,
-    type RowSelectionState,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { type RowSelectionState, useTable } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { format } from 'date-fns';
 import { useCallback, useMemo, useState } from 'react';
@@ -336,7 +332,7 @@ export default function FilesList({
         [page, pageSize, goTo, changePageSize],
     );
 
-    const columns = useMemo<ColumnDef<FileRow>[]>(
+    const columns = useMemo<DataTableColumnDef<FileRow>[]>(
         () => [
             {
                 id: 'select',
@@ -591,7 +587,8 @@ export default function FilesList({
         [copyToClipboard, router, download, reprocess, confirmDelete],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: rows,
         columns,
         state: {
@@ -601,7 +598,8 @@ export default function FilesList({
                 pageSize,
             },
             columnPinning: {
-                right: ['actions'],
+                start: [],
+                end: ['actions'],
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
@@ -614,7 +612,6 @@ export default function FilesList({
             const next = typeof updater === 'function' ? updater(current) : updater;
             paginate(next.pageIndex, next.pageSize);
         },
-        getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
         enableSorting: false,

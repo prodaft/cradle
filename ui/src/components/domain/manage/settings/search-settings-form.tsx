@@ -12,14 +12,17 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {} from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useId } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import * as z from 'zod';
+
+type SystemSettings = components['schemas']['SystemSettings'];
 
 const searchSettingsSchema = z.object({
     revealRestrictedMatches: z.boolean(),
@@ -31,14 +34,8 @@ const SEARCH_SETTINGS_DEFAULTS: SearchSettingsFormData = {
     revealRestrictedMatches: false,
 };
 
-interface SearchSettingsApi {
-    search?: {
-        reveal_restricted_matches?: boolean;
-    };
-}
-
 function getSearchSettingsFromApi(
-    settings: SearchSettingsApi | null | undefined,
+    settings: SystemSettings | null | undefined,
 ): SearchSettingsFormData | null {
     if (!settings?.search) return null;
     return {
@@ -59,21 +56,18 @@ export default function SearchSettingsForm() {
         defaultValues: SEARCH_SETTINGS_DEFAULTS,
     });
 
-    const { data: settings, isPending } = useQuery({
-        queryKey: queryKeys.management.settings(),
-        refetchOnWindowFocus: false,
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/management/settings/',
-            );
-            if (error) throw { response, error };
-            return data;
+    const { data: settings, isPending } = $api.useQuery(
+        'get',
+        '/management/settings/',
+        undefined,
+        {
+            refetchOnWindowFocus: false,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
-        },
-    });
+    );
 
     const saveSettings = useMutation({
         mutationFn: async (values: SearchSettingsFormData) => {
@@ -90,7 +84,7 @@ export default function SearchSettingsForm() {
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.management.settings() }],
+            invalidateQueries: invalidate(queryKeys.management.settings()),
             successMessage: 'Search settings updated successfully!',
         },
         onSuccess: (_, variables) => {

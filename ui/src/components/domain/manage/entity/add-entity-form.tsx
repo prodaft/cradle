@@ -32,7 +32,6 @@ import * as z from 'zod';
 
 type Entity = components['schemas']['Entity'];
 type EntityRequest = components['schemas']['EntityRequest'];
-type AdvancedQueryResponse = components['schemas']['AdvancedQueryPaginatedResponse'];
 
 interface AddEntityFormProps {
     onAdd?: (result: Entity) => void;
@@ -105,7 +104,7 @@ export default function AddEntityForm({ onAdd, teamId }: AddEntityFormProps) {
                 },
             );
             if (error) throw { response, error };
-            const results = (data as AdvancedQueryResponse)?.results ?? [];
+            const results = data?.results ?? [];
             return results
                 .filter(
                     (alias): alias is typeof alias & { id: number } =>
@@ -123,7 +122,6 @@ export default function AddEntityForm({ onAdd, teamId }: AddEntityFormProps) {
 
     const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
-        queryKey: ['entry_classes', 'add-entity'],
         refetchOnWindowFocus: false,
         meta: {
             showErrorToast: false,
@@ -177,7 +175,7 @@ export default function AddEntityForm({ onAdd, teamId }: AddEntityFormProps) {
         const options = entityClasses.map((c) => ({
             value: c.subtype,
             label: c.subtype,
-            prefix: (c.prefix as string) || '',
+            prefix: c.prefix || '',
         }));
         setSubtypeOptions(options);
         if (options.length > 0) {

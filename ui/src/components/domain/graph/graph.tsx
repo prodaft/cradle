@@ -29,6 +29,7 @@ import {
     useEffect,
     useMemo,
     useRef,
+    useState,
     type CSSProperties,
     type ReactNode,
     type RefObject,
@@ -45,6 +46,7 @@ import { MdFilterCenterFocus } from 'react-icons/md';
 import type Sigma from 'sigma';
 import { drawDiscNodeLabel, type NodeHoverDrawingFunction } from 'sigma/rendering';
 import { Edge, Node } from './graph-filter-utils';
+import { entityLayout } from './graph-layout';
 
 interface GraphConfig {
     nodeRadiusCoefficient?: number;
@@ -59,8 +61,6 @@ interface GraphConfig {
     simulationLinkDistance?: number;
     simulationFriction?: number;
     simulationCluster?: number;
-    simulationDecay?: number;
-    randomSeed?: string | number;
 }
 
 interface FetchProgress {
@@ -89,15 +89,13 @@ interface GraphViewerProps {
     fetchControls?: FetchControls | null;
 }
 
-interface ForceAtlas2LayoutContextValue {
+interface LayoutContextValue {
     stop: () => void;
     start: () => void;
     isRunning: boolean;
 }
 
-const ForceAtlas2LayoutContext = createContext<ForceAtlas2LayoutContextValue | null>(
-    null,
-);
+const LayoutContext = createContext<LayoutContextValue | null>(null);
 
 const SIGMA_EDGE_PROGRAM_CLASSES = { curved: EdgeCurveProgram };
 
@@ -148,51 +146,31 @@ function applyCurvedEdgeRenderAttrs(g: MultiDirectedGraph) {
     });
 }
 
-function createSeededRng(seed: string | number | undefined): () => number {
-    let state =
-        typeof seed === 'number' && Number.isFinite(seed)
-            ? Math.floor(Math.abs(seed)) % 2147483646 || 1
-            : typeof seed === 'string' && seed.length > 0
-              ? [...seed].reduce(
-                    (h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0,
-                    0,
-                ) >>> 0
-              : 88675123;
-    if (state === 0) state = 88675123;
-    return () => {
-        state = (Math.imul(1664525, state) + 1013904223) >>> 0;
-        return state / 4294967296;
-    };
-}
-
 function buildForceAtlas2Params(
     config: GraphConfig,
     nodeCount: number,
+    large: boolean,
 ): ForceAtlas2LayoutParameters {
     const friction = config.simulationFriction ?? 0.75;
     const repulsion = config.simulationRepulsion ?? 0;
     const gravity = config.simulationGravity ?? 0.15;
     const linkSpring = config.simulationLinkSpring ?? 0.6;
     const linkDistance = config.simulationLinkDistance ?? 16;
-    const decay = config.simulationDecay ?? 10000;
 
     const linkTightness = Math.sqrt(Math.min(24, Math.max(4, linkDistance)) / 16);
-    const decayBoost = 0.85 + Math.min(0.35, (decay - 1000) / 14000);
     const cluster = config.simulationCluster ?? 0.1;
     const clusterScale = 1 + cluster * 0.35;
 
     return {
         settings: {
-            slowDown: (2 + friction * 10) * decayBoost,
-            scalingRatio: Math.max(
-                0.12,
-                repulsion * 0.48 * linkTightness * clusterScale,
-            ),
-            gravity: Math.max(0.02, gravity * 3),
-            strongGravityMode: gravity >= 0.12,
-            outboundAttractionDistribution: true,
+            slowDown: 2.4 + friction * 12,
+            scalingRatio: 2 + repulsion * 4 * linkTightness * clusterScale,
+            gravity: gravity * 0.07,
+            outboundAttractionDistribution: false,
+            linLogMode: true,
             barnesHutOptimize: nodeCount >= 80,
             barnesHutTheta: 0.85,
+            adjustSizes: large,
             edgeWeightInfluence: Math.max(0.2, Math.min(2, 0.45 + linkSpring * 0.75)),
         },
     };
@@ -282,18 +260,83 @@ function createNodeHoverRenderer(
     };
 }
 
-function SigmaGraphThemeColors() {
+/** `Node.type` of entities (the compressed entry tree's key for them); artifacts are `'artifacts'`. */
+const ENTITY_TYPE = 'entities';
+
+/**
+ * Graphs with this many links or nodes are large: map-like sizes (see sizeSettings) and no minimap. The node count
+ * matters on its own: a few thousand nodes drawn at a fixed pixel size merge into blobs at the full view however few
+ * links they have.
+ */
+const LARGE_GRAPH_EDGES = 5000;
+const LARGE_GRAPH_NODES = 1000;
+
+/**
+ * `color` mixed into `background` at `weight` (0 to 1), as a solid colour. Fading needs this: sigma's WebGL blending
+ * adds a semi-transparent colour at full strength, so transparency brightens instead of fading.
+ */
+function fade(color: string, background: string, weight: number): string {
+    const channels = (rgba: string) =>
+        (rgba.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+    const [r = 0, g = 0, b = 0] = channels(color);
+    const [br = 0, bg = 0, bb = 0] = channels(background);
+    const mix = (c: number, base: number) => Math.round(base + (c - base) * weight);
+    return `rgba(${mix(r, br)}, ${mix(g, bg)}, ${mix(b, bb)}, 1)`;
+}
+
+/**
+ * Radius of a node with `degree` links: hubs stand out, leaves stay small. In pixels on small graphs, in layout units
+ * on large ones (see sizeSettings).
+ */
+function nodeSize(degree: number | undefined): number {
+    return Math.min(20, 2 + 2 * Math.log2(1 + (degree ?? 1)));
+}
+
+/** Link thickness: a fraction of the smallest node, never thinner than sigma's minEdgeThickness. */
+const EDGE_SIZE = 0.15;
+
+/**
+ * On large graphs sizes are in layout units and scale exactly with the zoom, like objects on a map: ForceAtlas2 keeps
+ * nodes apart by their sizes (adjustSizes), so nodes apart at one zoom level stay apart at all of them, and zooming
+ * into a dense cluster spreads it out. Small graphs keep sigma's defaults (sizes in pixels, growing slowly with the
+ * zoom): fitted to the screen, their few nodes would otherwise be drawn huge.
+ */
+function sizeSettings(large: boolean) {
+    return large
+        ? {
+              itemSizesReference: 'positions' as const,
+              zoomToSizeRatioFunction: (ratio: number) => ratio,
+          }
+        : { itemSizesReference: 'screen' as const, zoomToSizeRatioFunction: Math.sqrt };
+}
+
+/** `denseLinks`: the graph has LARGE_GRAPH_EDGES links or more, so they are drawn faint and skipped while moving. */
+function SigmaGraphThemeColors({
+    large,
+    denseLinks,
+}: {
+    large: boolean;
+    denseLinks: boolean;
+}) {
     const setSettings = useSetSettings();
     const isDarkMode = useTheme().resolvedTheme === 'dark';
 
     useEffect(() => {
         const frame = requestAnimationFrame(() => {
             const mutedColor = toSigmaColor('var(--color-muted-foreground)');
+            const background = toSigmaColor('var(--background)');
             setSettings({
-                enableEdgeEvents: true,
-                defaultEdgeColor: mutedColor,
+                // Edge clicks need every edge drawn again for hit-testing, too costly with this many links.
+                enableEdgeEvents: !denseLinks,
+                hideEdgesOnMove: denseLinks,
+                ...sizeSettings(large),
+                // With this many links, most are thinner than a pixel at the full view; sigma draws them at least this
+                // thick (default 1.7), which would cover the clusters in grey.
+                minEdgeThickness: denseLinks ? 0.5 : 1.7,
+                defaultEdgeColor: denseLinks
+                    ? fade(mutedColor, background, 0.3)
+                    : mutedColor,
                 defaultNodeColor: toSigmaColor('var(--color-primary)'),
-                labelColor: { color: toSigmaColor('var(--color-foreground)') },
                 edgeLabelColor: { color: mutedColor },
                 defaultDrawNodeHover: createNodeHoverRenderer(
                     toSigmaColor('var(--color-popover)'),
@@ -302,7 +345,61 @@ function SigmaGraphThemeColors() {
             });
         });
         return () => cancelAnimationFrame(frame);
-    }, [setSettings, isDarkMode]);
+    }, [setSettings, isDarkMode, large, denseLinks]);
+
+    return null;
+}
+
+/**
+ * While a node is hovered, it, its neighbours and the links between them stay in full colour; everything else stays
+ * where it is, only darker, so the neighbourhood stands out without losing the rest of the graph.
+ */
+function SigmaHoverFocus() {
+    const sigma = useSigma();
+    const registerEvents = useRegisterEvents();
+    const setSettings = useSetSettings();
+    const [hovered, setHovered] = useState<string | null>(null);
+
+    useEffect(() => {
+        registerEvents({
+            enterNode: (event) => setHovered(event.node),
+            leaveNode: () => setHovered(null),
+        });
+    }, [registerEvents]);
+
+    useEffect(() => {
+        if (!hovered || !sigma.getGraph().hasNode(hovered)) {
+            setSettings({ nodeReducer: null, edgeReducer: null, zIndex: false });
+            return;
+        }
+        const graph = sigma.getGraph();
+        const focused = new Set(graph.neighbors(hovered));
+        focused.add(hovered);
+        const background = toSigmaColor('var(--background)');
+        const muted = toSigmaColor('var(--color-muted-foreground)');
+        const highlight = toSigmaColor('var(--color-foreground)');
+        const dimmedEdge = fade(muted, background, 0.1);
+        const darker = new Map<string, string>();
+        const darken = (color: string = sigma.getSetting('defaultNodeColor')) => {
+            let dimmed = darker.get(color);
+            if (!dimmed) {
+                dimmed = fade(color, background, 0.25);
+                darker.set(color, dimmed);
+            }
+            return dimmed;
+        };
+        setSettings({
+            zIndex: true,
+            nodeReducer: (node, data) =>
+                focused.has(node)
+                    ? { ...data, zIndex: 1 }
+                    : { ...data, color: darken(data.color), zIndex: 0 },
+            edgeReducer: (edge, data) =>
+                graph.hasExtremity(edge, hovered)
+                    ? { ...data, color: highlight, zIndex: 1 }
+                    : { ...data, color: dimmedEdge, zIndex: 0 },
+        });
+    }, [hovered, sigma, setSettings]);
 
     return null;
 }
@@ -313,24 +410,9 @@ function SigmaGraphologyLoader({
     config,
 }: Pick<SigmaGraphBindingsProps, 'validNodes' | 'linksData' | 'config'>) {
     const loadGraph = useLoadGraph();
-    const sigma = useSigma();
-    const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
 
     useEffect(() => {
-        const currentGraph = sigma.getGraph();
-        if (currentGraph.order > 0) {
-            currentGraph.forEachNode((nodeId, attrs) => {
-                if (typeof attrs.x === 'number' && typeof attrs.y === 'number') {
-                    positionsRef.current.set(String(nodeId), {
-                        x: attrs.x,
-                        y: attrs.y,
-                    });
-                }
-            });
-        }
-
         const sizeCoef = config.nodeRadiusCoefficient ?? 1;
-        const rnd = createSeededRng(config.randomSeed);
         const g = new MultiDirectedGraph();
         const sigmaColors = new Map<string, string>();
         const resolveColor = (color: string) => {
@@ -341,15 +423,24 @@ function SigmaGraphologyLoader({
             }
             return resolved;
         };
+        const entityIds = new Set(
+            validNodes
+                .filter((node) => node.type === ENTITY_TYPE)
+                .map((node) => node.id),
+        );
+        const sizes = new Map(
+            validNodes.map((node) => [node.id, nodeSize(node.degree) * sizeCoef]),
+        );
+        const positions = entityLayout(
+            validNodes.map((node) => node.id),
+            linksData,
+            (id) => entityIds.has(id),
+            (id) => sizes.get(id)!,
+        );
         validNodes.forEach((node) => {
-            const saved = positionsRef.current.get(node.id);
-            const x = saved?.x ?? rnd() * 100 - 50;
-            const y = saved?.y ?? rnd() * 100 - 50;
-            positionsRef.current.set(node.id, { x, y });
             g.addNode(node.id, {
-                x,
-                y,
-                size: 10 * sizeCoef,
+                ...positions.get(node.id)!,
+                size: sizes.get(node.id)!,
                 label: node.label || node.id,
                 color:
                     node.color && !node.color.startsWith('var(')
@@ -363,10 +454,12 @@ function SigmaGraphologyLoader({
                     edge.id != null && String(edge.id) !== '' ? String(edge.id) : null;
                 if (edgeKey) {
                     if (!g.hasEdge(edgeKey)) {
-                        g.addEdgeWithKey(edgeKey, edge.source, edge.target);
+                        g.addEdgeWithKey(edgeKey, edge.source, edge.target, {
+                            size: EDGE_SIZE,
+                        });
                     }
                 } else if (!g.hasEdge(edge.source, edge.target)) {
-                    g.addEdge(edge.source, edge.target);
+                    g.addEdge(edge.source, edge.target, { size: EDGE_SIZE });
                 }
             });
             if (config.curvedLinks === true) {
@@ -376,13 +469,11 @@ function SigmaGraphologyLoader({
         loadGraph(g, true);
     }, [
         loadGraph,
-        sigma,
         validNodes,
         linksData,
         config.showLinks,
         config.curvedLinks,
         config.nodeRadiusCoefficient,
-        config.randomSeed,
     ]);
 
     return null;
@@ -397,7 +488,7 @@ function SigmaGraphEvents({
 }: Omit<SigmaGraphBindingsProps, 'validNodes' | 'linksData' | 'config'>) {
     const registerEvents = useRegisterEvents();
     const sigma = useSigma();
-    const layoutContext = useContext(ForceAtlas2LayoutContext);
+    const layoutContext = useContext(LayoutContext);
     const draggedNodeRef = useRef<string | null>(null);
     const nodeDragMovedRef = useRef(false);
     const ignoreClickNodeIdRef = useRef<string | null>(null);
@@ -477,6 +568,7 @@ function SigmaGraphEvents({
                 }
             },
             downNode: (event) => {
+                sigma.setCustomBBox(sigma.getBBox());
                 draggedNodeRef.current = event.node;
                 nodeDragMovedRef.current = false;
                 ignoreClickNodeIdRef.current = null;
@@ -507,15 +599,13 @@ function SigmaGraphEvents({
                     nodeDragMovedRef.current = false;
                     draggedNodeRef.current = null;
                     sigma.getGraph().removeNodeAttribute(draggedNode, 'highlighted');
+                    sigma.setCustomBBox(null);
                     const lc = layoutContextRef.current;
                     if (stoppedLayoutForDragRef.current && lc) {
                         lc.start();
                         stoppedLayoutForDragRef.current = false;
                     }
                 }
-            },
-            mousedown: () => {
-                if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
             },
         });
     }, [registerEvents, sigma]);
@@ -524,7 +614,7 @@ function SigmaGraphEvents({
 }
 
 function GraphControls() {
-    const layout = useContext(ForceAtlas2LayoutContext);
+    const layout = useContext(LayoutContext);
     const {
         zoomIn,
         zoomOut,
@@ -610,41 +700,48 @@ function GraphScene({
     onTogglePanel,
     activePanel,
 }: SigmaGraphBindingsProps) {
+    const denseLinks = linksData.length >= LARGE_GRAPH_EDGES;
+    const large = denseLinks || validNodes.length >= LARGE_GRAPH_NODES;
+    const fa2RunningRef = useRef(false);
     const fa2Params = useMemo(
-        () => buildForceAtlas2Params(config, validNodes.length),
+        () => buildForceAtlas2Params(config, validNodes.length, large),
         // eslint-disable-next-line react-hooks/exhaustive-deps -- explicit simulation keys only (not whole `config`)
         [
             validNodes.length,
+            large,
             config.simulationFriction,
             config.simulationRepulsion,
             config.simulationGravity,
             config.simulationLinkSpring,
             config.simulationLinkDistance,
-            config.simulationDecay,
             config.simulationCluster,
         ],
     );
-    const runMs = config.simulationDecay ?? 10000;
 
     return (
         <>
-            <SigmaGraphThemeColors />
+            <SigmaGraphThemeColors large={large} denseLinks={denseLinks} />
             <SigmaGraphologyLoader
                 validNodes={validNodes}
                 linksData={linksData}
                 config={config}
             />
-            <ControlsContainer
-                position='top-right'
-                className='!border-border !bg-background/90 !rounded-lg'
-            >
-                <MiniMap width='120px' height='120px' />
-            </ControlsContainer>
-            {/* Remounted on new parameters: @react-sigma's worker hook keeps the settings it was created with. */}
+            <SigmaHoverFocus />
+            {/* The minimap renders the whole graph a second time, and rebuilds it as the camera moves. */}
+            {!large && (
+                <ControlsContainer
+                    position='top-right'
+                    className='!border-border !bg-background/90 !rounded-lg'
+                >
+                    <MiniMap width='120px' height='120px' />
+                </ControlsContainer>
+            )}
+            {/* Only on Start: the graph is laid out already (see entityLayout). Remounted on new parameters, as
+                @react-sigma's worker hook keeps the settings it was created with. */}
             <ForceAtlas2Runner
                 key={JSON.stringify(fa2Params)}
                 params={fa2Params}
-                runMs={runMs}
+                runningRef={fa2RunningRef}
             >
                 <SigmaGraphEvents
                     idToNode={idToNode}
@@ -664,55 +761,42 @@ function GraphScene({
     );
 }
 
-/** Runs ForceAtlas2 when mounted and stops each run after `runMs`: it never converges on its own (Barnes-Hut keeps nodes jittering). */
+/** ForceAtlas2 behind the Start/Stop button: runs until paused, and stops on unmount. */
 function ForceAtlas2Runner({
     params,
-    runMs,
+    runningRef,
     children,
 }: {
     params: ForceAtlas2LayoutParameters;
-    runMs: number;
+    /** Whether ForceAtlas2 was started (and not stopped since), kept by the parent so a remount carries on. */
+    runningRef: RefObject<boolean>;
     children: ReactNode;
 }) {
-    const sigma = useSigma();
-    const {
-        start: startFa2,
-        stop: stopFa2,
-        isRunning,
-    } = useWorkerLayoutForceAtlas2(params);
-    const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const layoutContextValue = useMemo(() => {
-        const clearStopTimer = () => {
-            if (stopTimerRef.current) {
-                clearTimeout(stopTimerRef.current);
-                stopTimerRef.current = null;
-            }
-        };
-        return {
-            stop: () => {
-                clearStopTimer();
-                stopFa2();
-            },
+    const { start, stop, isRunning } = useWorkerLayoutForceAtlas2(params);
+    const layoutContextValue = useMemo(
+        () => ({
             start: () => {
-                clearStopTimer();
-                startFa2();
-                stopTimerRef.current = setTimeout(stopFa2, runMs);
+                runningRef.current = true;
+                start();
+            },
+            stop: () => {
+                runningRef.current = false;
+                stop();
             },
             isRunning,
-        };
-    }, [startFa2, stopFa2, isRunning, runMs]);
+        }),
+        [start, stop, isRunning, runningRef],
+    );
 
-    const { start: startLayout, stop: stopLayout } = layoutContextValue;
     useEffect(() => {
-        if (sigma.getGraph().order === 0) return;
-        startLayout();
-        return stopLayout;
-    }, [sigma, startFa2, stopFa2]); // eslint-disable-line react-hooks/exhaustive-deps -- restart only when the worker changes, not when isRunning toggles
+        if (runningRef.current) start();
+        return stop;
+    }, [start, stop, runningRef]);
 
     return (
-        <ForceAtlas2LayoutContext.Provider value={layoutContextValue}>
+        <LayoutContext.Provider value={layoutContextValue}>
             {children}
-        </ForceAtlas2LayoutContext.Provider>
+        </LayoutContext.Provider>
     );
 }
 
@@ -773,6 +857,7 @@ export default function GraphViewer({
         () => ({
             allowInvalidContainer: true as const,
             edgeProgramClasses: SIGMA_EDGE_PROGRAM_CLASSES,
+            renderLabels: false,
         }),
         [],
     );

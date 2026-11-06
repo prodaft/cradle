@@ -48,7 +48,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
             const { data, error, response } = await fetchClient.GET('/query/', {
                 params: {
                     query: {
-                        subtype: path,
+                        subtype: [path],
                         referenced_in: noteId,
                         page,
                     },
@@ -102,15 +102,15 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                 noteId,
             });
 
-            const batch = response as any;
             setReferences((prev) => ({
                 ...prev,
-                [path]: [...(prev[path] || []), ...batch.results],
+                [path]: [...(prev[path] || []), ...response.results],
             }));
 
             setNextPageStatus((prev) => ({
                 ...prev,
-                [path]: batch.page === batch.total_pages ? 'end' : batch.page + 1,
+                [path]:
+                    response.page === response.total_pages ? 'end' : response.page + 1,
             }));
         } catch (_error) {
             setNextPageStatus((prev) => ({

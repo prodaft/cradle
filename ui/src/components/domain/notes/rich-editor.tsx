@@ -505,7 +505,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
-        queryKey: ['entry_classes', 'rich-editor'],
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
@@ -535,7 +534,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const fileDownloadFn = useCallback(
         async (file: { fileId: string }): Promise<FileDownload> => {
-            return (await downloadMutateRef.current(file.fileId)) as FileDownload;
+            return await downloadMutateRef.current(file.fileId);
         },
         [],
     );

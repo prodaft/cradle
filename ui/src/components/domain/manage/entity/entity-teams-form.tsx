@@ -11,17 +11,18 @@ import { ACCESS_OPTIONS } from '@/components/domain/manage/access-options';
 import { Button } from '@/components/ui/button';
 import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { queryKeys } from '@/hooks/query';
+import { invalidate, queryKeys } from '@/hooks/query';
+import { type DataTableColumnDef, dataTableFeatures } from '@/lib/data-table';
 import {
     EMPTY_SEARCH_STATE,
     FREE_TEXT_SCHEMA,
     type SearchState,
 } from '@/lib/search-query/search-schema';
 import {} from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useTable } from '@tanstack/react-table';
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 
 type AccessLevel = (typeof ACCESS_OPTIONS)[number]['value'];
@@ -48,16 +49,8 @@ export default function EntityTeamsForm({ entityId }: EntityTeamsFormProps) {
         isPending: grantsPending,
         isError: grantsError,
         refetch: refetchGrants,
-    } = useQuery({
-        queryKey: queryKeys.teams.entity(entityId),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/entries/entities/{entity_id}/access/teams/',
-                { params: { path: { entity_id: entityId } } },
-            );
-            if (error) throw { response, error };
-            return data;
-        },
+    } = $api.useQuery('get', '/entries/entities/{entity_id}/access/teams/', {
+        params: { path: { entity_id: entityId } },
     });
 
     const {
@@ -66,27 +59,20 @@ export default function EntityTeamsForm({ entityId }: EntityTeamsFormProps) {
         isFetching,
         isError: teamsError,
         refetch: refetchTeams,
-    } = useQuery({
-        queryKey: queryKeys.teams.list({
-            page: pagination.pageIndex + 1,
-            pageSize: pagination.pageSize,
-            search: appliedSearch,
-        }),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET('/teams/', {
-                params: {
-                    query: {
-                        page: pagination.pageIndex + 1,
-                        page_size: pagination.pageSize,
-                        ...(appliedSearch ? { search: appliedSearch } : {}),
-                    },
+    } = $api.useQuery(
+        'get',
+        '/teams/',
+        {
+            params: {
+                query: {
+                    page: pagination.pageIndex + 1,
+                    page_size: pagination.pageSize,
+                    ...(appliedSearch ? { search: appliedSearch } : {}),
                 },
-            });
-            if (error) throw { response, error };
-            return data;
+            },
         },
-        placeholderData: (previous) => previous,
-    });
+        { placeholderData: (previous) => previous },
+    );
 
     useLayoutEffect(() => {
         setEdits({});
@@ -102,7 +88,7 @@ export default function EntityTeamsForm({ entityId }: EntityTeamsFormProps) {
         const map: Record<string, { access: AccessLevel; isOwner: boolean }> = {};
         for (const grant of grants ?? []) {
             map[grant.team.id as string] = {
-                access: grant.access_type as AccessLevel,
+                access: grant.access_type,
                 isOwner: grant.is_owner ?? false,
             };
         }
@@ -162,16 +148,12 @@ export default function EntityTeamsForm({ entityId }: EntityTeamsFormProps) {
         meta: {
             successMessage: 'Team access updated',
             invalidateQueries: [
-                { queryKey: queryKeys.teams.all },
+                ...invalidate(...queryKeys.teams.all()),
                 {
-                    queryKey: [
-                        'get',
-                        '/entries/entities/{entity_id}/access/users/',
-                        entityId,
-                    ],
+                    queryKey: queryKeys.access.entityUsers(entityId),
                 },
-                { queryKey: ['get', '/entries/entities/{entity_id}/'] },
-                { queryKey: ['get', '/users/{user_id}/access/'] },
+                { queryKey: queryKeys.entities.details() },
+                { queryKey: queryKeys.access.users() },
             ],
         },
         onSuccess: () => setEdits({}),
@@ -188,7 +170,7 @@ export default function EntityTeamsForm({ entityId }: EntityTeamsFormProps) {
         setAppliedSearch(state.q ?? '');
     }, []);
 
-    const columns = useMemo<ColumnDef<EntityTeamRow>[]>(
+    const columns = useMemo<DataTableColumnDef<EntityTeamRow>[]>(
         () => [
             {
                 accessorKey: 'name',
@@ -265,12 +247,12 @@ export default function EntityTeamsForm({ entityId }: EntityTeamsFormProps) {
         [accessOf, updateAccess, saveAccess.isPending],
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: dataTableFeatures,
         data: teamRows,
         columns,
         state: { pagination },
         onPaginationChange: setPagination,
-        getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
         pageCount: Math.max(1, teamsPage?.total_pages ?? 1),
         rowCount: teamsPage?.count,
