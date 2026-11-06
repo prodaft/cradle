@@ -15,6 +15,7 @@ Common Bun scripts:
 - `bun run typecheck`: run TypeScript checks.
 - `bun run verify`: run the verify script as defined in `package.json`.
 - `bun run prettier`: format with Prettier.
+- `bun run prettier:check`: check formatting without writing changes (used by CI).
 - `bun run generate-api`: regenerate OpenAPI clients, for this you need to have the backend running locally or pass it a valid remote api path
 
 ## Prettier

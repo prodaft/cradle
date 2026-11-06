@@ -1,5 +1,4 @@
 import pluginJs from '@eslint/js';
-import pluginImport from 'eslint-plugin-import';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
 import pluginReactConfig from 'eslint-plugin-react/configs/recommended.js';
 import globals from 'globals';
@@ -20,7 +19,6 @@ export default [
     {
         plugins: {
             'react-hooks': pluginReactHooks,
-            import: pluginImport,
         },
         rules: {
             // --- Unused code detection ---

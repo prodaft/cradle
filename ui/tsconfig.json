@@ -1,13 +1,11 @@
 {
     "compilerOptions": {
         "target": "ES2022",
-        "useDefineForClassFields": true,
         "incremental": true,
         "lib": ["ES2022", "DOM", "DOM.Iterable"],
         "types": ["node"],
         "module": "ESNext",
         "skipLibCheck": true,
-        "skipDefaultLibCheck": true,
         "allowJs": true,
 
         /* Bundler mode */
@@ -24,29 +22,13 @@
         "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": true,
         "noImplicitAny": false,
-        "strictNullChecks": true,
-        "strictFunctionTypes": true,
-        "strictBindCallApply": true,
-        "strictPropertyInitialization": true,
-        "noImplicitThis": true,
-        "alwaysStrict": true,
         "noUncheckedIndexedAccess": true,
 
         "paths": {
             "@/*": ["./src/*"],
-            "@components": ["./src/components"],
-            "@components/*": ["./src/components/*"],
-            "@contexts": ["./src/contexts"],
-            "@contexts/*": ["./src/contexts/*"],
-            "@hooks": ["./src/hooks"],
-            "@hooks/*": ["./src/hooks/*"],
-            "@services": ["./src/services"],
             "@services/*": ["./src/services/*"],
-            "@utils": ["./src/utils"],
             "@utils/*": ["./src/utils/*"],
-            "@styles": ["./styles"],
-            "@styles/*": ["./styles/*"],
-            "src/*": ["./src/*"]
+            "@styles/*": ["./styles/*"]
         }
     },
     "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],

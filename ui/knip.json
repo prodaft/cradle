@@ -1,7 +1,10 @@
 {
     "$schema": "https://unpkg.com/knip@6/schema.json",
     "entry": ["src/entry-client.tsx"],
-    "project": ["**/*.{ts,tsx,js,jsx}", "!public/**", "!node_modules/**"],
+    "project": ["**/*.{ts,tsx,js,jsx,css}", "!public/**", "!node_modules/**"],
     "ignore": ["src/services/openapi/schema.ts"],
-    "ignoreDependencies": ["tailwindcss"]
+    "ignoreDependencies": ["buffer"],
+    "ignoreIssues": {
+        "src/components/ui/**": ["exports"]
+    }
 }

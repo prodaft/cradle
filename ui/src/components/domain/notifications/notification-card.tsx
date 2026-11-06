@@ -1,4 +1,6 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import {
     notificationDestructive,
@@ -13,8 +15,6 @@ import { useRouter } from '@tanstack/react-router';
 import { format, formatDistanceToNow } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from 'src/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from 'src/components/ui/tooltip';
 
 type Notification = components['schemas']['Notification'];
 type AccessRequestNotification = components['schemas']['AccessRequestNotification'];

@@ -70,16 +70,6 @@ export default defineConfig(({ mode }) => {
         server: { port: 5173 },
         resolve: {
             tsconfigPaths: true,
-            alias: {
-                '@': path.resolve(import.meta.dirname, './src'),
-                '@components': path.resolve(import.meta.dirname, './src/components'),
-                '@contexts': path.resolve(import.meta.dirname, './src/contexts'),
-                '@hooks': path.resolve(import.meta.dirname, './src/hooks'),
-                '@services': path.resolve(import.meta.dirname, './src/services'),
-                '@utils': path.resolve(import.meta.dirname, './src/utils'),
-                '@styles': path.resolve(import.meta.dirname, './styles'),
-                src: path.resolve(import.meta.dirname, './src'),
-            },
             dedupe: [
                 '@codemirror/state',
                 '@codemirror/view',
